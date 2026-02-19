@@ -123,18 +123,19 @@
       pointer-events: auto;
       cursor: pointer;
       fill: none;
-      stroke: rgba(255, 255, 255, 0.5);
-      stroke-width: 4;
+      stroke: rgba(255, 255, 255, 0.6);
+      stroke-width: 2;
       stroke-linecap: round;
       stroke-linejoin: round;
       opacity: 0;
+      filter: url(#line-glow);
       transition: opacity 0.2s, stroke 0.2s;
     }
 
     .map-polylines .polyline:hover,
     .map-polylines .polyline.highlight {
       opacity: 1;
-      stroke: rgba(255, 255, 255, 0.7);
+      stroke: rgba(255, 255, 255, 0.9);
     }
 
     .marker {
@@ -156,19 +157,22 @@
     .marker.highlight {
       opacity: 1;
       background: rgba(200, 68, 68, 0.25);
-      border-color: rgba(255, 255, 255, 0.5);
+      border-color: rgba(255, 255, 255, 0.85);
+      box-shadow: 0 0 6px 1px rgba(255, 255, 255, 0.5), 0 0 14px 3px rgba(255, 255, 255, 0.25);
     }
 
     .marker.custom {
       opacity: 1;
-      background: rgba(68, 170, 102, 0.65);
-      border-color: rgba(255, 255, 255, 0.75);
+      background: rgba(200, 68, 68, 0.65);
+      border-color: rgba(255, 255, 255, 0.85);
+      box-shadow: 0 0 6px 1px rgba(255, 255, 255, 0.5), 0 0 14px 3px rgba(255, 255, 255, 0.25);
     }
 
     .marker.custom:hover,
     .marker.custom.highlight {
-      background: rgba(68, 170, 102, 0.85);
+      background: rgba(200, 68, 68, 0.85);
       border-color: #fff;
+      box-shadow: 0 0 8px 2px rgba(255, 255, 255, 0.7), 0 0 18px 4px rgba(255, 255, 255, 0.35);
     }
 
     .marker.hidden {
@@ -317,10 +321,38 @@
     .detail-panel .remove-pin-btn:hover {
       background: rgba(200, 68, 68, 0.2);
     }
+
+    .pin-tooltip {
+      position: fixed;
+      padding: 0.2rem 0;
+      background: none;
+      color: #e8e0d4;
+      font-family: "Cinzel", "Times New Roman", serif;
+      font-size: 0.95rem;
+      font-weight: 600;
+      letter-spacing: 0.08em;
+      pointer-events: none;
+      z-index: 100;
+      opacity: 0;
+      transition: opacity 0.15s;
+      white-space: nowrap;
+      max-width: 280px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      text-shadow: 0 0 4px rgba(0,0,0,0.9), 0 1px 2px rgba(0,0,0,0.8);
+    }
+
+    .pin-tooltip.visible {
+      opacity: 1;
+    }
   </style>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700&display=swap" rel="stylesheet">
 </head>
 
 <body>
+  <div id="pinTooltip" class="pin-tooltip" aria-hidden="true"></div>
   <div class="toolbar">
     <button type="button" id="zoomIn">Zoom +</button>
     <button type="button" id="zoomOut">Zoom −</button>
@@ -331,7 +363,20 @@
   <div class="main" id="main">
     <div class="map-wrap" id="mapWrap">
       <div class="map-inner" id="mapInner">
-        <div class="map-image-wrap">
+        <svg aria-hidden="true" style="position:absolute;width:0;height:0;">
+            <defs>
+              <filter id="line-glow" x="-50%" y="-50%" width="200%" height="200%">
+                <feGaussianBlur in="SourceGraphic" stdDeviation="1.5" result="blur"/>
+                <feFlood flood-color="rgba(255,255,255,0.7)" result="color"/>
+                <feComposite in="color" in2="blur" operator="in" result="glow"/>
+                <feMerge>
+                  <feMergeNode in="glow"/>
+                  <feMergeNode in="SourceGraphic"/>
+                </feMerge>
+              </filter>
+            </defs>
+          </svg>
+          <div class="map-image-wrap">
           <img src="Map.png" alt="Sylvakar map" id="mapImg">
           <svg id="mapPolylines" class="map-polylines" viewBox="0 0 100 100" preserveAspectRatio="none"></svg>
           <div id="markers"></div>
@@ -595,6 +640,38 @@
     const detailBody = document.getElementById("detailBody");
     const addPinBtn = document.getElementById("addPinBtn");
     const pinHint = document.getElementById("pinHint");
+    const pinTooltip = document.getElementById("pinTooltip");
+    let tooltipPin = null;
+
+    mapWrap.addEventListener("mouseover", (e) => {
+      const pin = e.target.closest(".marker") || e.target.closest(".polyline");
+      if (pin) {
+        tooltipPin = pin;
+        const name = pin.getAttribute("data-name") || "";
+        if (name) {
+          pinTooltip.textContent = name;
+          pinTooltip.setAttribute("aria-hidden", "false");
+          const rect = pin.getBoundingClientRect ? pin.getBoundingClientRect() : null;
+          if (rect) {
+            pinTooltip.style.left = (rect.left + rect.width / 2) + "px";
+            pinTooltip.style.top = (rect.top - 4) + "px";
+            pinTooltip.style.transform = "translate(-50%, -100%)";
+          } else {
+            pinTooltip.style.left = e.clientX + "px";
+            pinTooltip.style.top = (e.clientY - 8) + "px";
+            pinTooltip.style.transform = "translate(-50%, -100%)";
+          }
+          pinTooltip.classList.add("visible");
+        }
+      }
+    });
+    mapWrap.addEventListener("mouseout", (e) => {
+      if (tooltipPin && (e.target === tooltipPin || tooltipPin.contains(e.target)) && (!e.relatedTarget || (e.relatedTarget !== tooltipPin && !tooltipPin.contains(e.relatedTarget)))) {
+        pinTooltip.classList.remove("visible");
+        pinTooltip.setAttribute("aria-hidden", "true");
+        tooltipPin = null;
+      }
+    });
 
     function applyTransform() {
       mapInner.style.transform = `translate(${translateX}px, ${translateY}px) scale(${scale})`;
@@ -723,7 +800,6 @@
           path.setAttribute("points", pts);
           path.setAttribute("class", "polyline");
           path.setAttribute("data-name", loc.name);
-          path.setAttribute("title", loc.name);
           path.addEventListener("click", e => { e.stopPropagation(); showDetail(loc.name, loc.description, false); });
           polylinesEl.appendChild(path);
           return;
@@ -734,7 +810,6 @@
         el.dataset.name = loc.name;
         el.style.left = (loc.x / nw * 100) + "%";
         el.style.top = (loc.y / nh * 100) + "%";
-        el.title = loc.name;
         el.addEventListener("click", e => { e.stopPropagation(); showDetail(loc.name, loc.description, false); });
         markersEl.appendChild(el);
       });
@@ -743,9 +818,9 @@
         const el = document.createElement("div");
         el.className = "marker custom";
         el.dataset.pinIndex = i;
+        el.dataset.name = pin.label || "Custom pin";
         el.style.left = pin.x + "%";
         el.style.top = pin.y + "%";
-        el.title = pin.label || "Custom pin";
         el.dataset.index = i;
         el.addEventListener("click", e => {
           e.stopPropagation();
