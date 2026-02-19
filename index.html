@@ -137,14 +137,47 @@
     }
     .location-item:hover { background: #2a2a2a; }
     .location-item.selected { background: #2a2440; border-left-color: #8b7aa8; }
-    .detail {
-      padding: 0.75rem 1rem;
-      border-top: 1px solid #333;
-      overflow-y: auto;
-      max-height: 40vh;
+    .detail-panel {
+      width: 300px;
+      min-width: 260px;
+      display: flex;
+      flex-direction: column;
+      background: #252525;
+      border-left: 1px solid #333;
+      flex-shrink: 0;
     }
-    .detail h3 { margin: 0 0 0.5rem 0; font-size: 1rem; color: #d0c0e8; }
-    .detail p { margin: 0; font-size: 0.9rem; line-height: 1.5; color: #b0b0b0; white-space: pre-line; }
+    .detail-panel .detail-header {
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      padding: 0.35rem 0.5rem;
+      border-bottom: 1px solid #333;
+      flex-shrink: 0;
+    }
+    .detail-panel .detail-header { display: none; }
+    .detail-panel.open .detail-header { display: flex; }
+    .detail-panel .detail-close {
+      width: 28px;
+      height: 28px;
+      border: none;
+      background: transparent;
+      color: #999;
+      font-size: 1.25rem;
+      line-height: 1;
+      cursor: pointer;
+      border-radius: 4px;
+      padding: 0;
+    }
+    .detail-panel .detail-close:hover { color: #e0e0e0; background: #333; }
+    .detail-panel .detail-body {
+      padding: 0.75rem 1rem;
+      overflow-y: auto;
+      flex: 1;
+      min-height: 0;
+    }
+    .detail-panel .detail-body p.placeholder { color: #666; margin: 0; font-size: 0.9rem; }
+    .detail-panel .detail-body h3 { margin: 0 0 0.5rem 0; font-size: 1rem; color: #d0c0e8; }
+    .detail-panel .detail-body h3 + p { margin: 0; font-size: 0.9rem; line-height: 1.5; color: #b0b0b0; white-space: pre-line; }
   </style>
 </head>
 <body>
@@ -164,12 +197,17 @@
         </div>
       </div>
     </div>
+    <div class="detail-panel" id="detailPanel">
+      <div class="detail-header">
+        <button type="button" class="detail-close" id="detailClose" title="Close">×</button>
+      </div>
+      <div class="detail-body" id="detailBody">
+        <p class="placeholder">Click a location or pin to see details.</p>
+      </div>
+    </div>
     <aside class="panel">
       <h2>Locations</h2>
       <div class="location-list" id="locationList"></div>
-      <div class="detail" id="detail">
-        <p style="color: #666;">Click a location or pin to see details.</p>
-      </div>
     </aside>
   </div>
 
@@ -214,7 +252,8 @@
     const mapImg = document.getElementById("mapImg");
     const markersEl = document.getElementById("markers");
     const locationList = document.getElementById("locationList");
-    const detail = document.getElementById("detail");
+    const detailPanel = document.getElementById("detailPanel");
+    const detailBody = document.getElementById("detailBody");
     const addPinBtn = document.getElementById("addPinBtn");
     const pinHint = document.getElementById("pinHint");
 
@@ -222,12 +261,30 @@
       mapInner.style.transform = `translate(${translateX}px, ${translateY}px) scale(${scale})`;
     }
 
-    function showDetail(name, description, isCustom) {
-      detail.innerHTML = `<h3>${escapeHtml(name)}</h3><p>${escapeHtml(description || "")}</p>`;
-      if (isCustom) detail.querySelector("h3").appendChild(document.createTextNode(" (pin)"));
+    let currentSelection = null;
+
+    function closeDetail() {
+      currentSelection = null;
+      detailPanel.classList.remove("open");
+      detailBody.innerHTML = '<p class="placeholder">Click a location or pin to see details.</p>';
       document.querySelectorAll(".location-item").forEach(el => el.classList.remove("selected"));
-      const item = document.querySelector(`[data-name="${escapeAttr(name)}"]`);
-      if (item) item.classList.add("selected");
+    }
+
+    function showDetail(name, description, isCustom) {
+      if (currentSelection && currentSelection.name === name && currentSelection.isCustom === isCustom) {
+        closeDetail();
+        return;
+      }
+      currentSelection = { name, description, isCustom };
+      detailPanel.classList.add("open");
+      let title = escapeHtml(name);
+      if (isCustom) title += " (pin)";
+      detailBody.innerHTML = `<h3>${title}</h3><p>${escapeHtml(description || "")}</p>`;
+      document.querySelectorAll(".location-item").forEach(el => el.classList.remove("selected"));
+      if (!isCustom) {
+        const item = document.querySelector(`.location-item[data-name="${escapeAttr(name)}"]`);
+        if (item) item.classList.add("selected");
+      }
     }
     function escapeHtml(s) {
       const div = document.createElement("div");
@@ -355,6 +412,8 @@
       mapWrap.classList.toggle("add-pin", addPinMode);
       pinHint.textContent = addPinMode ? "Click on the map to place a pin." : "";
     });
+
+    document.getElementById("detailClose").addEventListener("click", closeDetail);
 
     loadCustomPins();
     renderLocationList();
