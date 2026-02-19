@@ -1,0 +1,365 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Daggerheart — Sylvakar Map</title>
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: system-ui, -apple-system, sans-serif;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      background: #1a1a1a;
+      color: #e0e0e0;
+    }
+    .toolbar {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      padding: 0.5rem 0.75rem;
+      background: #252525;
+      border-bottom: 1px solid #333;
+      flex-shrink: 0;
+    }
+    .toolbar button {
+      padding: 0.4rem 0.75rem;
+      border: 1px solid #444;
+      background: #333;
+      color: #e0e0e0;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 0.9rem;
+    }
+    .toolbar button:hover { background: #404040; }
+    .toolbar button.active { background: #4a3a6a; border-color: #6b5b8a; }
+    .main {
+      flex: 1;
+      display: flex;
+      min-height: 0;
+    }
+    .map-wrap {
+      flex: 1;
+      position: relative;
+      overflow: hidden;
+      cursor: grab;
+    }
+    .map-wrap.panning { cursor: grabbing; }
+    .map-wrap.add-pin { cursor: crosshair; }
+    .map-inner {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transform-origin: 0 0;
+      will-change: transform;
+    }
+    .map-inner .map-image-wrap {
+      position: relative;
+      display: inline-block;
+    }
+    .map-inner img {
+      max-width: none;
+      height: auto;
+      display: block;
+      pointer-events: none;
+      user-select: none;
+    }
+    #markers {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+    }
+    #markers .marker { pointer-events: auto; }
+    .marker {
+      position: absolute;
+      width: 24px;
+      height: 24px;
+      margin-left: -12px;
+      margin-top: -12px;
+      background: #c44;
+      border: 2px solid #fff;
+      border-radius: 50%;
+      cursor: pointer;
+      z-index: 2;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.5);
+    }
+    .marker:hover { background: #e66; }
+    .marker.custom {
+      background: #4a6;
+      border-color: #fff;
+    }
+    .marker.hidden { display: none; }
+    .panel {
+      width: 320px;
+      min-width: 280px;
+      display: flex;
+      flex-direction: column;
+      background: #252525;
+      border-left: 1px solid #333;
+      flex-shrink: 0;
+    }
+    .panel h2 {
+      margin: 0;
+      padding: 0.6rem 0.75rem;
+      font-size: 0.95rem;
+      font-weight: 600;
+      color: #b8a0d0;
+      border-bottom: 1px solid #333;
+    }
+    .location-list {
+      overflow-y: auto;
+      flex: 1;
+      padding: 0.25rem 0;
+    }
+    .location-list summary {
+      padding: 0.35rem 0.75rem;
+      cursor: pointer;
+      font-size: 0.85rem;
+      color: #aaa;
+    }
+    .location-list details { border-bottom: 1px solid #2a2a2a; }
+    .location-list details[open] summary { color: #b8a0d0; }
+    .location-item {
+      padding: 0.4rem 0.75rem 0.4rem 1.25rem;
+      cursor: pointer;
+      font-size: 0.9rem;
+      border-left: 3px solid transparent;
+    }
+    .location-item:hover { background: #2a2a2a; }
+    .location-item.selected { background: #2a2440; border-left-color: #8b7aa8; }
+    .detail {
+      padding: 0.75rem 1rem;
+      border-top: 1px solid #333;
+      overflow-y: auto;
+      max-height: 40vh;
+    }
+    .detail h3 { margin: 0 0 0.5rem 0; font-size: 1rem; color: #d0c0e8; }
+    .detail p { margin: 0; font-size: 0.9rem; line-height: 1.5; color: #b0b0b0; white-space: pre-line; }
+  </style>
+</head>
+<body>
+  <div class="toolbar">
+    <button type="button" id="zoomIn">Zoom +</button>
+    <button type="button" id="zoomOut">Zoom −</button>
+    <button type="button" id="zoomReset">Reset</button>
+    <button type="button" id="addPinBtn">Add pin</button>
+    <span id="pinHint" style="font-size: 0.85rem; color: #888;"></span>
+  </div>
+  <div class="main">
+    <div class="map-wrap" id="mapWrap">
+      <div class="map-inner" id="mapInner">
+        <div class="map-image-wrap">
+          <img src="Map.png" alt="Sylvakar map" id="mapImg">
+          <div id="markers"></div>
+        </div>
+      </div>
+    </div>
+    <aside class="panel">
+      <h2>Locations</h2>
+      <div class="location-list" id="locationList"></div>
+      <div class="detail" id="detail">
+        <p style="color: #666;">Click a location or pin to see details.</p>
+      </div>
+    </aside>
+  </div>
+
+  <script>
+    const LOCATIONS = [
+      { name: "Dynamo", category: "Cities", x: 0, y: 0, description: "Currently the biggest clank manufacturing city. Produces both clanks and goods (ie weapons, armor, trinkets, bobbles, clothes, you name it.)" },
+      { name: "Vinod", category: "Cities", x: 0, y: 0, description: "Sanskrit for pleasure, happiness, diversion. Contains the largest legal brothel in the kingdom of Sylvakar, the Blooming Flower. Legal prostitution is the city's main form of economic growth, making it a very prosperous city. The owner of the largest brothel is essentially the lord over the city. Her name is Madame Resplenda. The city guard under the direct control of Madame Resplenda officially known as the Vinodi Guard are known more commonly by the locals as the \"Rose Buds\". There are other brothels besides the main one (none come close to comparing in size), but all others must be registered and pay additional \"taxes\" which go to the \"city\". The required registration has limits on size, services, etc, which ensures the Blooming Flower remains the largest and most profitable brothel. Lots of tourism due to the high demand service they provide. Located in a warmer region of the kingdom, allowing for prostitutes to comfortably display their wares year round." },
+      { name: "To'Wrath", category: "Cities", x: 0, y: 0, description: "Stands for The Ones Who Remember All Their History. It is a lost city located somewhere in the Nether, though its exact location or its status are unknown. It is the first machine (clank city). At one point the clanks there had ascended past all known technology, and then they had vanished." },
+      { name: "Serenity", category: "Cities", x: 0, y: 0, description: "Known Faun city, considered a safe haven for the race and others that have seen persecution and prejudice from humanoids. Nestled amongst a massive outcropping of a sablewood forest." },
+      { name: "Sanji", category: "Cities", x: 0, y: 0, description: "Smaller, quiet, peaceful farming town. Known for its premium quality of herbs and spice ingredients. Almost the whole town is involved in the farming process in some way. The town has a secret fighting school they have been able to hide from the rest of the world for centuries. Citizenship in the town is strict, under the guise of the town having farming trade secrets, but in reality it's to prevent the world from finding out about the secret fighting school. Every citizen eventually undergoes 3 years of training at the secret fighting school. The fighting style focuses on hand to hand combat designed to deescalate conflict in a nonlethal form (disarm, disable). There is training with various weapon types but the primary focus is hand to hand. Little authority presence due to every citizen's discipline and ability to deescalate." },
+      { name: "Currington", category: "Cities", x: 0, y: 0, description: "Due to its well protected ports to and from the Aspien Sea, It is the biggest trade hub in the Kingdom of Sylvakar. Home to the Bards Guild and associated tavern, The Song Bird, The biggest in the kingdom. Due to its close proximity to Sanji, the city's brewmasters contract growers of Sanji to grow their hops and other spices for them. Known for brewing and distilling the best ales and liquors in the kingdom." },
+      { name: "To'Acar", category: "Cities", x: 0, y: 0, description: "Home to a quiet hunting town with a few very small vegetable farms. Not known for much other than it's the home to the Galapas Ra'p and Rigs (brothers, of course) and Brother Fatus and his renowned steamed game dumplings. This was the start of our adventure. The players came from the town of Sanji with medicinal supplies, herbs that can't and aren't grown in To'Acar." },
+      { name: "Lesbos", category: "Settlements", x: 0, y: 0, description: "The isle of Lesbos is located just off the southern shores of the mainland. No men are allowed within the settlement limits. Must be female. It is unknown what happens to men that are brave enough to enter the settlement." },
+      { name: "UNAMED", category: "Settlements", x: 0, y: 0, description: "(No description provided.)" },
+      { name: "The Isle", category: "Points Of Interest", x: 0, y: 0, description: "Due to a perpetual storm that surrounds the island, it is inaccessible to ships, and obfuscates the view of the island when looking through a telescope. It is unknown what is causing this storm or if the island is habitable. But that doesn't stop people from trying." },
+      { name: "Farrendel Tower", category: "Points Of Interest", x: 0, y: 0, description: "Massive tower located on the northern coast of the Aspien Sea. Local rumors are that there is something mystical and powerful atop of the tower, though no one has ever made it. People are terrified to even approach the tower. Lately there has been a higher number of military guardsmen around the tower, more than normal. Unlike other towers and light houses in the kingdom, Farrendel Tower is made from a strange black elderglass. A material not seen anywhere else in the kingdom." },
+      { name: "The Black Marsh", category: "Points Of Interest", x: 0, y: 0, description: "(Denoted by the squiggle circle on the map.) Not much is known about the Black Marsh. What is known is that it contains HIGHLY sought after bogwood, which is some of the most sought after in the kingdom. This is due to the fact that it makes the finest magical staffs, bows, and handles for axes and swords the known world has ever known. Due to the properties of the marsh, it makes staffs highly resistant to magical backfires and stresses. It allows bows to be incredibly strong and lethal while maintaining low draw weights, making firing faster and less fatiguing. No one is sure how much bogwood is left and it's been almost impossible to get within the last century. Many have tried, and many have died. Magic doesn't seem to work when trying to retrieve it." },
+      { name: "The Western Reaches and The Halo (△)", category: "Other Places of Note", x: 0, y: 0, description: "The Western Reaches is a massive mountain ridge spanning almost the entire western coast of Sylvakar. Elevation varies but towards the north of the ridge and spanning inland is The Halo. A series of peaks that ascend to the highest point on the island. It is said that the tallest peak is so high that it is possible to commune with the gods, hence the name God's Grasp." },
+      { name: "The Nether (- - - border)", category: "Other Places of Note", x: 0, y: 0, description: "Located to the North East on the island is The Nether. Essentially a no go zone, it is the equivalent to the Bermuda Triangle. Magic doesn't behave properly there. Technology doesn't behave properly there. It drives immeasurable fear into the hearts of all the denizens of the island and, as a consequence, people do not go anywhere near it. There is no need for signs or fences, as it is clearly barren and blighted forming a natural border between the two ecological zones. Nestled somewhere within the Nether is To'Wrath, the first clank city. Its exact location is unknown and lost to time." },
+      { name: "Lake Destined", category: "Other Places of Note", x: 0, y: 0, description: "Lake Destined (pronounced dest-eend) is the largest inland lake on the continent. Said to have an island somewhere in its waters. Though there is no official record or historical documentation of any islands in the lake or any magical features about the lake. But when people sail the lake they often go missing for days, then are eventually found somewhere on shore. Those who return (not all do, but most do) appear healthy but seem off to those that know them. Close friends and loved ones say the person's personality has changed, making them just generally complacent. They don't remember certain things that they should about their past, and when reminded they pretend they simply forgot (especially with what happened on the lake, no recollection there from anyone). Some loved ones have said they've found their returned just standing by a window, looking out and mumbling to themselves, sometimes for hours until they are disrupted by someone. Some have been severely injured/wounded well after the event and don't seem to register the pain as a normal person would (some claim their returned didn't even notice they were hurt until someone pointed it out). Anyone looking directly into the eyes of a returned say they almost get a feeling of nausea, and can't hold the void filled stare for long." },
+      { name: "The Andel Line (··· border)", category: "Other Places of Note", x: 0, y: 0, description: "The Andel Line is located to the south east of the island and represents a temporary border between two of the wealthiest and most influential noble families (besides the King's) locked in conflict. Though mostly a cold conflict and fraught with standoffs, it has on occasion erupted in full on wars between the two families. While formidable forces on their own, they are no match for the Crown's forces, which regularly have to do a show of force to calm the temperatures while negotiations can be held until the next inevitable flare up. The Emberlanes, led by Rogan Emberlane, believe the Blackreeds have taken their ancestral grounds awarded to them by the first king of Sylvakar, Etrin the Guileful. The Blackreeds headed by Evlyn Blackreed maintain that the Blackreeds predate them by centuries and that it has been their lands all along. Some of the population in the surrounding area believe that this isn't really about ancestral grounds, but stemmed from a lovers quarrel, which caused the Emberlanes to break from the Blackreeds." }
+    ];
+
+    const STORAGE_KEY = "daggerheart_custom_pins";
+    let scale = 1, translateX = 0, translateY = 0;
+    let isPanning = false, startX, startY, startTx, startTy;
+    let addPinMode = false;
+    let customPins = [];
+
+    function loadCustomPins() {
+      try {
+        const s = localStorage.getItem(STORAGE_KEY);
+        if (s) customPins = JSON.parse(s);
+      } catch (_) { customPins = []; }
+    }
+    function saveCustomPins() {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(customPins));
+    }
+
+    const mapWrap = document.getElementById("mapWrap");
+    const mapInner = document.getElementById("mapInner");
+    const mapImg = document.getElementById("mapImg");
+    const markersEl = document.getElementById("markers");
+    const locationList = document.getElementById("locationList");
+    const detail = document.getElementById("detail");
+    const addPinBtn = document.getElementById("addPinBtn");
+    const pinHint = document.getElementById("pinHint");
+
+    function applyTransform() {
+      mapInner.style.transform = `translate(${translateX}px, ${translateY}px) scale(${scale})`;
+    }
+
+    function showDetail(name, description, isCustom) {
+      detail.innerHTML = `<h3>${escapeHtml(name)}</h3><p>${escapeHtml(description || "")}</p>`;
+      if (isCustom) detail.querySelector("h3").appendChild(document.createTextNode(" (pin)"));
+      document.querySelectorAll(".location-item").forEach(el => el.classList.remove("selected"));
+      const item = document.querySelector(`[data-name="${escapeAttr(name)}"]`);
+      if (item) item.classList.add("selected");
+    }
+    function escapeHtml(s) {
+      const div = document.createElement("div");
+      div.textContent = s;
+      return div.innerHTML;
+    }
+    function escapeAttr(s) {
+      return String(s).replace(/"/g, "&quot;");
+    }
+
+    function renderLocationList() {
+      const byCategory = {};
+      LOCATIONS.forEach(loc => {
+        if (!byCategory[loc.category]) byCategory[loc.category] = [];
+        byCategory[loc.category].push(loc);
+      });
+      const order = ["Cities", "Settlements", "Points Of Interest", "Other Places of Note"];
+      let html = "";
+      order.forEach(cat => {
+        if (!byCategory[cat]) return;
+        html += `<details open><summary>${escapeHtml(cat)}</summary>`;
+        byCategory[cat].forEach(loc => {
+          html += `<div class="location-item" data-name="${escapeAttr(loc.name)}" data-desc="${escapeAttr(loc.description)}">${escapeHtml(loc.name)}</div>`;
+        });
+        html += "</details>";
+      });
+      locationList.innerHTML = html;
+      locationList.querySelectorAll(".location-item").forEach(el => {
+        el.addEventListener("click", () => {
+          const name = el.getAttribute("data-name");
+          const desc = el.getAttribute("data-desc");
+          showDetail(name, desc, false);
+        });
+      });
+    }
+
+    function renderMarkers() {
+      markersEl.innerHTML = "";
+      const hasPos = (x, y) => (x !== 0 || y !== 0);
+
+      LOCATIONS.forEach((loc) => {
+        if (!hasPos(loc.x, loc.y)) return;
+        const el = document.createElement("div");
+        el.className = "marker";
+        el.style.left = loc.x + "%";
+        el.style.top = loc.y + "%";
+        el.title = loc.name;
+        el.addEventListener("click", e => { e.stopPropagation(); showDetail(loc.name, loc.description, false); });
+        markersEl.appendChild(el);
+      });
+
+      customPins.forEach((pin, i) => {
+        const el = document.createElement("div");
+        el.className = "marker custom";
+        el.style.left = pin.x + "%";
+        el.style.top = pin.y + "%";
+        el.title = pin.label || "Custom pin";
+        el.dataset.index = i;
+        el.addEventListener("click", e => {
+          e.stopPropagation();
+          showDetail(pin.label || "Custom pin", pin.description || "", true);
+        });
+        markersEl.appendChild(el);
+      });
+    }
+
+    function addCustomPin(xPct, yPct) {
+      const label = prompt("Label for this pin (optional):") || "Custom pin";
+      customPins.push({ x: xPct, y: yPct, label, description: "" });
+      saveCustomPins();
+      renderMarkers();
+      showDetail(label, "", true);
+    }
+
+    mapImg.addEventListener("load", () => { renderMarkers(); });
+
+    mapWrap.addEventListener("wheel", e => {
+      e.preventDefault();
+      const delta = e.deltaY > 0 ? -0.15 : 0.15;
+      scale = Math.max(0.3, Math.min(4, scale + delta));
+      applyTransform();
+    }, { passive: false });
+
+    mapWrap.addEventListener("mousedown", e => {
+      if (addPinMode) return;
+      if (e.button !== 0) return;
+      isPanning = true;
+      startX = e.clientX;
+      startY = e.clientY;
+      startTx = translateX;
+      startTy = translateY;
+      mapWrap.classList.add("panning");
+    });
+    mapWrap.addEventListener("mousemove", e => {
+      if (!isPanning) return;
+      translateX = startTx + (e.clientX - startX);
+      translateY = startTy + (e.clientY - startY);
+      applyTransform();
+    });
+    mapWrap.addEventListener("mouseup", () => {
+      isPanning = false;
+      mapWrap.classList.remove("panning");
+    });
+    mapWrap.addEventListener("mouseleave", () => {
+      isPanning = false;
+      mapWrap.classList.remove("panning");
+    });
+
+    mapWrap.addEventListener("click", e => {
+      if (!addPinMode) return;
+      const wrap = mapImg.closest(".map-image-wrap");
+      const rect = wrap.getBoundingClientRect();
+      const x = (e.clientX - rect.left) / rect.width * 100;
+      const y = (e.clientY - rect.top) / rect.height * 100;
+      if (x >= 0 && x <= 100 && y >= 0 && y <= 100) addCustomPin(x, y);
+    });
+
+    document.getElementById("zoomIn").addEventListener("click", () => { scale = Math.min(4, scale + 0.25); applyTransform(); });
+    document.getElementById("zoomOut").addEventListener("click", () => { scale = Math.max(0.3, scale - 0.25); applyTransform(); });
+    document.getElementById("zoomReset").addEventListener("click", () => { scale = 1; translateX = 0; translateY = 0; applyTransform(); });
+
+    addPinBtn.addEventListener("click", () => {
+      addPinMode = !addPinMode;
+      addPinBtn.classList.toggle("active", addPinMode);
+      mapWrap.classList.toggle("add-pin", addPinMode);
+      pinHint.textContent = addPinMode ? "Click on the map to place a pin." : "";
+    });
+
+    loadCustomPins();
+    renderLocationList();
+    applyTransform();
+    renderMarkers();
+  </script>
+</body>
+</html>

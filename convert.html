@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>locations.md → JSON</title>
+  <style>
+    body { font-family: system-ui, sans-serif; max-width: 720px; margin: 1rem auto; padding: 0 1rem; }
+    h1 { font-size: 1.1rem; }
+    textarea { width: 100%; height: 200px; font-family: monospace; font-size: 0.85rem; }
+    button { padding: 0.5rem 1rem; margin-top: 0.5rem; cursor: pointer; }
+    pre { background: #f0f0f0; padding: 0.75rem; overflow: auto; font-size: 0.8rem; white-space: pre-wrap; word-break: break-all; }
+    p { color: #555; font-size: 0.9rem; }
+  </style>
+</head>
+<body>
+  <h1>locations.md → JSON</h1>
+  <p>Paste the contents of <strong>locations.md</strong> below, then click Convert. Copy the JSON and replace the <code>LOCATIONS</code> array in <strong>index.html</strong> (search for <code>const LOCATIONS =</code>).</p>
+  <textarea id="input" placeholder="Paste locations.md here..."></textarea>
+  <button type="button" id="convert">Convert</button>
+  <pre id="output" style="display:none;"></pre>
+
+  <script>
+    document.getElementById("convert").addEventListener("click", () => {
+      const text = document.getElementById("input").value.trim();
+      const out = document.getElementById("output");
+      const lines = text.split(/\r?\n/);
+      const result = [];
+      let current = null;
+      let category = "";
+
+      for (let i = 0; i < lines.length; i++) {
+        const line = lines[i];
+        const h3 = line.match(/^### (.+)$/);
+        const h2 = line.match(/^## (.+)$/);
+        const pos = line.match(/^Position:\s*(\d+)\s*,\s*(\d+)/i);
+
+        if (h2) {
+          const cat = h2[1].replace(/\s*\([^)]*\)\s*$/, "").trim();
+          if (cat && !cat.toLowerCase().startsWith("map legend")) category = cat;
+        }
+        if (h3) {
+          if (current && (current.name || current.description)) {
+            current.description = (current.description || "").trim();
+            if (current.name) result.push(current);
+          }
+          current = { name: h3[1].trim(), category: category || "Other", x: 0, y: 0, description: "" };
+        } else if (pos && current) {
+          current.x = parseInt(pos[1], 10);
+          current.y = parseInt(pos[2], 10);
+        } else if (current && line.trim() && !line.startsWith("#") && !line.startsWith("---")) {
+          if (current.description) current.description += "\n";
+          current.description += line.trim();
+        }
+      }
+      if (current && (current.name || current.description)) {
+        current.description = (current.description || "").trim();
+        if (current.name) result.push(current);
+      }
+
+      const oneLine = result.map(l => ({
+        name: l.name,
+        category: l.category,
+        x: l.x,
+        y: l.y,
+        description: (l.description || "").trim()
+      }));
+      out.textContent = "// Replace the LOCATIONS array in index.html with the following:\n\nconst LOCATIONS = " + JSON.stringify(oneLine, null, 2) + ";";
+      out.style.display = "block";
+    });
+  </script>
+</body>
+</html>
