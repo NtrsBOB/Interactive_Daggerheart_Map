@@ -42,12 +42,20 @@
         if (h3) {
           if (current && (current.name || current.description)) {
             current.description = (current.description || "").trim();
+            if (current.positions && current.positions.length === 1) {
+              current.x = current.positions[0][0];
+              current.y = current.positions[0][1];
+            } else if (current.positions && current.positions.length > 1) {
+              current.points = current.positions;
+              current.x = 0;
+              current.y = 0;
+            }
+            delete current.positions;
             if (current.name) result.push(current);
           }
-          current = { name: h3[1].trim(), category: category || "Other", x: 0, y: 0, description: "" };
+          current = { name: h3[1].trim(), category: category || "Other", x: 0, y: 0, description: "", positions: [] };
         } else if (pos && current) {
-          current.x = parseInt(pos[1], 10);
-          current.y = parseInt(pos[2], 10);
+          current.positions.push([parseInt(pos[1], 10), parseInt(pos[2], 10)]);
         } else if (current && line.trim() && !line.startsWith("#") && !line.startsWith("---")) {
           if (current.description) current.description += "\n";
           current.description += line.trim();
@@ -55,16 +63,30 @@
       }
       if (current && (current.name || current.description)) {
         current.description = (current.description || "").trim();
+        if (current.positions && current.positions.length === 1) {
+          current.x = current.positions[0][0];
+          current.y = current.positions[0][1];
+        } else if (current.positions && current.positions.length > 1) {
+          current.points = current.positions;
+          current.x = 0;
+          current.y = 0;
+        }
+        delete current.positions;
         if (current.name) result.push(current);
       }
 
-      const oneLine = result.map(l => ({
-        name: l.name,
-        category: l.category,
-        x: l.x,
-        y: l.y,
-        description: (l.description || "").trim()
-      }));
+      const oneLine = result.map(l => {
+        const out = { name: l.name, category: l.category, description: (l.description || "").trim() };
+        if (l.points && l.points.length > 1) {
+          out.points = l.points;
+          out.x = 0;
+          out.y = 0;
+        } else {
+          out.x = l.x || 0;
+          out.y = l.y || 0;
+        }
+        return out;
+      });
       out.textContent = "// Replace the LOCATIONS array in index.html with the following:\n\nconst LOCATIONS = " + JSON.stringify(oneLine, null, 2) + ";";
       out.style.display = "block";
     });

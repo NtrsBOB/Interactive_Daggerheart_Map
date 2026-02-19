@@ -1,6 +1,16 @@
 # Map Legend — Locations
 
-Positions are **pixel coordinates** from the map image (same as opening Map.png and reading x,y from an image editor or viewer). Use 0,0 until you place them. Example: if a city is at pixel (450, 320) in Map.png, use `Position: 450, 320`.
+Positions are **pixel coordinates** from the map image (same as opening Map.png and reading x,y from an image editor or viewer). Use 0,0 until you place them.
+
+- **Single pin**: one `Position: x, y` per location.
+- **Line (polyline)**: use multiple `Position:` lines; point 1 connects to point 2, point 2 to point 3, etc. Example:
+  ```
+  ### The Andel Line
+  Position: 100, 200
+  Position: 150, 220
+  Position: 200, 210
+  Description...
+  ```
 
 ---
 
@@ -78,8 +88,14 @@ Position: 1246, 431
 
 ## Other Places of Note
 
-### The Western Reaches and The Halo (△)
-Position: 0, 0
+### The Western Reaches and The Halo
+Position: 519, 301
+Position: 318, 293
+Position: 263, 150
+Position: 348, 394
+Position: 298, 587
+Position: 366, 725
+Position: 464, 823
 
 The Western Reaches is a massive mountain ridge spanning almost the entire western coast of Sylvakar. Elevation varies but towards the north of the ridge and spanning inland is The Halo. A series of peaks that ascend to the highest point on the island. It is said that the tallest peak is so high that it is possible to commune with the gods, hence the name God's Grasp.
 

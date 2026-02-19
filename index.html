@@ -110,6 +110,33 @@
       pointer-events: auto;
     }
 
+    .map-polylines {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+    }
+
+    .map-polylines .polyline {
+      pointer-events: auto;
+      cursor: pointer;
+      fill: none;
+      stroke: rgba(255, 255, 255, 0.5);
+      stroke-width: 4;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+      opacity: 0;
+      transition: opacity 0.2s, stroke 0.2s;
+    }
+
+    .map-polylines .polyline:hover,
+    .map-polylines .polyline.highlight {
+      opacity: 1;
+      stroke: rgba(255, 255, 255, 0.7);
+    }
+
     .marker {
       position: absolute;
       width: 44px;
@@ -306,6 +333,7 @@
       <div class="map-inner" id="mapInner">
         <div class="map-image-wrap">
           <img src="Map.png" alt="Sylvakar map" id="mapImg">
+          <svg id="mapPolylines" class="map-polylines" viewBox="0 0 100 100" preserveAspectRatio="none"></svg>
           <div id="markers"></div>
         </div>
       </div>
@@ -325,23 +353,149 @@
   </div>
 
   <script>
-    let LOCATIONS = [
-      { name: "Dynamo", category: "Cities", x: 479, y: 446, description: "Currently the biggest clank manufacturing city. Produces both clanks and goods (ie weapons, armor, trinkets, bobbles, clothes, you name it.)" },
-      { name: "Vinod", category: "Cities", x: 1110, y: 782, description: "Sanskrit for pleasure, happiness, diversion. Contains the largest legal brothel in the kingdom of Sylvakar, the Blooming Flower. Legal prostitution is the city's main form of economic growth, making it a very prosperous city. The owner of the largest brothel is essentially the lord over the city. Her name is Madame Resplenda. The city guard under the direct control of Madame Resplenda officially known as the Vinodi Guard are known more commonly by the locals as the \"Rose Buds\". There are other brothels besides the main one (none come close to comparing in size), but all others must be registered and pay additional \"taxes\" which go to the \"city\". The required registration has limits on size, services, etc, which ensures the Blooming Flower remains the largest and most profitable brothel. Lots of tourism due to the high demand service they provide. Located in a warmer region of the kingdom, allowing for prostitutes to comfortably display their wares year round." },
-      { name: "To'Wrath", category: "Cities", x: 1012, y: 255, description: "Stands for The Ones Who Remember All Their History. It is a lost city located somewhere in the Nether, though its exact location or its status are unknown. It is the first machine (clank city). At one point the clanks there had ascended past all known technology, and then they had vanished." },
-      { name: "Serenity", category: "Cities", x: 564, y: 702, description: "Known Faun city, considered a safe haven for the race and others that have seen persecution and prejudice from humanoids. Nestled amongst a massive outcropping of a sablewood forest." },
-      { name: "Sanji", category: "Cities", x: 835, y: 620, description: "Smaller, quiet, peaceful farming town. Known for its premium quality of herbs and spice ingredients. Almost the whole town is involved in the farming process in some way. The town has a secret fighting school they have been able to hide from the rest of the world for centuries. Citizenship in the town is strict, under the guise of the town having farming trade secrets, but in reality it's to prevent the world from finding out about the secret fighting school. Every citizen eventually undergoes 3 years of training at the secret fighting school. The fighting style focuses on hand to hand combat designed to deescalate conflict in a nonlethal form (disarm, disable). There is training with various weapon types but the primary focus is hand to hand. Little authority presence due to every citizen's discipline and ability to deescalate." },
-      { name: "Currington", category: "Cities", x: 634, y: 592, description: "Due to its well protected ports to and from the Aspien Sea, It is the biggest trade hub in the Kingdom of Sylvakar. Home to the Bards Guild and associated tavern, The Song Bird, The biggest in the kingdom. Due to its close proximity to Sanji, the city's brewmasters contract growers of Sanji to grow their hops and other spices for them. Known for brewing and distilling the best ales and liquors in the kingdom." },
-      { name: "To'Acar", category: "Cities", x: 887, y: 678, description: "Home to a quiet hunting town with a few very small vegetable farms. Not known for much other than it's the home to the Galapas Ra'p and Rigs (brothers, of course) and Brother Fatus and his renowned steamed game dumplings. This was the start of our adventure. The players came from the town of Sanji with medicinal supplies, herbs that can't and aren't grown in To'Acar." },
-      { name: "Lesbos", category: "Settlements", x: 676, y: 845, description: "The isle of Lesbos is located just off the southern shores of the mainland. No men are allowed within the settlement limits. Must be female. It is unknown what happens to men that are brave enough to enter the settlement." },
-      { name: "UNAMED", category: "Settlements", x: 250, y: 270, description: "(No description provided.)" },
-      { name: "The Isle", category: "Points Of Interest", x: 339, y: 814, description: "Due to a perpetual storm that surrounds the island, it is inaccessible to ships, and obfuscates the view of the island when looking through a telescope. It is unknown what is causing this storm or if the island is habitable. But that doesn't stop people from trying." },
-      { name: "Farrendel Tower", category: "Points Of Interest", x: 580, y: 183, description: "Massive tower located on the northern coast of the Aspien Sea. Local rumors are that there is something mystical and powerful atop of the tower, though no one has ever made it. People are terrified to even approach the tower. Lately there has been a higher number of military guardsmen around the tower, more than normal. Unlike other towers and light houses in the kingdom, Farrendel Tower is made from a strange black elderglass. A material not seen anywhere else in the kingdom." },
-      { name: "The Black Marsh", category: "Points Of Interest", x: 1246, y: 431, description: "(Denoted by the squiggle circle on the map.) Not much is known about the Black Marsh. What is known is that it contains HIGHLY sought after bogwood, which is some of the most sought after in the kingdom. This is due to the fact that it makes the finest magical staffs, bows, and handles for axes and swords the known world has ever known. Due to the properties of the marsh, it makes staffs highly resistant to magical backfires and stresses. It allows bows to be incredibly strong and lethal while maintaining low draw weights, making firing faster and less fatiguing. No one is sure how much bogwood is left and it's been almost impossible to get within the last century. Many have tried, and many have died. Magic doesn't seem to work when trying to retrieve it." },
-      { name: "The Western Reaches and The Halo (△)", category: "Other Places of Note", x: 0, y: 0, description: "The Western Reaches is a massive mountain ridge spanning almost the entire western coast of Sylvakar. Elevation varies but towards the north of the ridge and spanning inland is The Halo. A series of peaks that ascend to the highest point on the island. It is said that the tallest peak is so high that it is possible to commune with the gods, hence the name God's Grasp." },
-      { name: "The Nether (- - - border)", category: "Other Places of Note", x: 0, y: 0, description: "Located to the North East on the island is The Nether. Essentially a no go zone, it is the equivalent to the Bermuda Triangle. Magic doesn't behave properly there. Technology doesn't behave properly there. It drives immeasurable fear into the hearts of all the denizens of the island and, as a consequence, people do not go anywhere near it. There is no need for signs or fences, as it is clearly barren and blighted forming a natural border between the two ecological zones. Nestled somewhere within the Nether is To'Wrath, the first clank city. Its exact location is unknown and lost to time." },
-      { name: "Lake Destined", category: "Other Places of Note", x: 0, y: 0, description: "Lake Destined (pronounced dest-eend) is the largest inland lake on the continent. Said to have an island somewhere in its waters. Though there is no official record or historical documentation of any islands in the lake or any magical features about the lake. But when people sail the lake they often go missing for days, then are eventually found somewhere on shore. Those who return (not all do, but most do) appear healthy but seem off to those that know them. Close friends and loved ones say the person's personality has changed, making them just generally complacent. They don't remember certain things that they should about their past, and when reminded they pretend they simply forgot (especially with what happened on the lake, no recollection there from anyone). Some loved ones have said they've found their returned just standing by a window, looking out and mumbling to themselves, sometimes for hours until they are disrupted by someone. Some have been severely injured/wounded well after the event and don't seem to register the pain as a normal person would (some claim their returned didn't even notice they were hurt until someone pointed it out). Anyone looking directly into the eyes of a returned say they almost get a feeling of nausea, and can't hold the void filled stare for long." },
-      { name: "The Andel Line (··· border)", category: "Other Places of Note", x: 0, y: 0, description: "The Andel Line is located to the south east of the island and represents a temporary border between two of the wealthiest and most influential noble families (besides the King's) locked in conflict. Though mostly a cold conflict and fraught with standoffs, it has on occasion erupted in full on wars between the two families. While formidable forces on their own, they are no match for the Crown's forces, which regularly have to do a show of force to calm the temperatures while negotiations can be held until the next inevitable flare up. The Emberlanes, led by Rogan Emberlane, believe the Blackreeds have taken their ancestral grounds awarded to them by the first king of Sylvakar, Etrin the Guileful. The Blackreeds headed by Evlyn Blackreed maintain that the Blackreeds predate them by centuries and that it has been their lands all along. Some of the population in the surrounding area believe that this isn't really about ancestral grounds, but stemmed from a lovers quarrel, which caused the Emberlanes to break from the Blackreeds." }
+    const LOCATIONS = [
+      {
+        "name": "Dynamo",
+        "category": "Cities",
+        "description": "Currently the biggest clank manufacturing city. Produces both clanks and goods (ie weapons, armor, trinkets, bobbles, clothes, you name it.)",
+        "x": 479,
+        "y": 446
+      },
+      {
+        "name": "Vinod",
+        "category": "Cities",
+        "description": "Sanskrit for pleasure, happiness, diversion. Contains the largest legal brothel in the kingdom of Sylvakar, the Blooming Flower. Legal prostitution is the city's main form of economic growth, making it a very prosperous city. The owner of the largest brothel is essentially the lord over the city. Her name is Madame Resplenda. The city guard under the direct control of Madame Resplenda officially known as the Vinodi Guard are known more commonly by the locals as the \"Rose Buds\". There are other brothels besides the main one (none come close to comparing in size), but all others must be registered and pay additional \"taxes\" which go to the \"city\". The required registration has limits on size, services, etc, which ensures the Blooming Flower remains the largest and most profitable brothel. Lots of tourism due to the high demand service they provide. Located in a warmer region of the kingdom, allowing for prostitutes to comfortably display their wares year round.",
+        "x": 1110,
+        "y": 782
+      },
+      {
+        "name": "To'Wrath",
+        "category": "Cities",
+        "description": "Stands for The Ones Who Remember All Their History. It is a lost city located somewhere in the Nether, though its exact location or its status are unknown. It is the first machine (clank city). At one point the clanks there had ascended past all known technology, and then they had vanished.",
+        "x": 1012,
+        "y": 255
+      },
+      {
+        "name": "Serenity",
+        "category": "Cities",
+        "description": "Known Faun city, considered a safe haven for the race and others that have seen persecution and prejudice from humanoids. Nestled amongst a massive outcropping of a sablewood forest.",
+        "x": 564,
+        "y": 702
+      },
+      {
+        "name": "Sanji",
+        "category": "Cities",
+        "description": "Smaller, quiet, peaceful farming town. Known for its premium quality of herbs and spice ingredients. Almost the whole town is involved in the farming process in some way. The town has a secret fighting school they have been able to hide from the rest of the world for centuries. Citizenship in the town is strict, under the guise of the town having farming trade secrets, but in reality it's to prevent the world from finding out about the secret fighting school. Every citizen eventually undergoes 3 years of training at the secret fighting school. The fighting style focuses on hand to hand combat designed to deescalate conflict in a nonlethal form (disarm, disable). There is training with various weapon types but the primary focus is hand to hand. Little authority presence due to every citizen's discipline and ability to deescalate.",
+        "x": 835,
+        "y": 620
+      },
+      {
+        "name": "Currington",
+        "category": "Cities",
+        "description": "Due to its well protected ports to and from the Aspien Sea, It is the biggest trade hub in the Kingdom of Sylvakar. Home to the Bards Guild and associated tavern, The Song Bird, The biggest in the kingdom. Due to its close proximity to Sanji, the city's brewmasters contract growers of Sanji to grow their hops and other spices for them. Known for brewing and distilling the best ales and liquors in the kingdom.",
+        "x": 634,
+        "y": 592
+      },
+      {
+        "name": "To'Acar",
+        "category": "Cities",
+        "description": "Home to a quiet hunting town with a few very small vegetable farms. Not known for much other than it's the home to the Galapas Ra'p and Rigs (brothers, of course) and Brother Fatus and his renowned steamed game dumplings. This was the start of our adventure. The players came from the town of Sanji with medicinal supplies, herbs that can't and aren't grown in To'Acar.",
+        "x": 887,
+        "y": 678
+      },
+      {
+        "name": "Lesbos",
+        "category": "Settlements",
+        "description": "The isle of Lesbos is located just off the southern shores of the mainland. No men are allowed within the settlement limits. Must be female. It is unknown what happens to men that are brave enough to enter the settlement.",
+        "x": 676,
+        "y": 845
+      },
+      {
+        "name": "UNAMED",
+        "category": "Settlements",
+        "description": "(No description provided.)",
+        "x": 250,
+        "y": 270
+      },
+      {
+        "name": "The Isle",
+        "category": "Points Of Interest",
+        "description": "Due to a perpetual storm that surrounds the island, it is inaccessible to ships, and obfuscates the view of the island when looking through a telescope. It is unknown what is causing this storm or if the island is habitable. But that doesn't stop people from trying.",
+        "x": 339,
+        "y": 814
+      },
+      {
+        "name": "Farrendel Tower",
+        "category": "Points Of Interest",
+        "description": "Massive tower located on the northern coast of the Aspien Sea. Local rumors are that there is something mystical and powerful atop of the tower, though no one has ever made it. People are terrified to even approach the tower. Lately there has been a higher number of military guardsmen around the tower, more than normal. Unlike other towers and light houses in the kingdom, Farrendel Tower is made from a strange black elderglass. A material not seen anywhere else in the kingdom.",
+        "x": 580,
+        "y": 183
+      },
+      {
+        "name": "The Black Marsh",
+        "category": "Points Of Interest",
+        "description": "(Denoted by the squiggle circle on the map.) Not much is known about the Black Marsh. What is known is that it contains HIGHLY sought after bogwood, which is some of the most sought after in the kingdom. This is due to the fact that it makes the finest magical staffs, bows, and handles for axes and swords the known world has ever known. Due to the properties of the marsh, it makes staffs highly resistant to magical backfires and stresses. It allows bows to be incredibly strong and lethal while maintaining low draw weights, making firing faster and less fatiguing. No one is sure how much bogwood is left and it's been almost impossible to get within the last century. Many have tried, and many have died. Magic doesn't seem to work when trying to retrieve it.",
+        "x": 1246,
+        "y": 431
+      },
+      {
+        "name": "The Western Reaches and The Halo",
+        "category": "Other Places of Note",
+        "description": "The Western Reaches is a massive mountain ridge spanning almost the entire western coast of Sylvakar. Elevation varies but towards the north of the ridge and spanning inland is The Halo. A series of peaks that ascend to the highest point on the island. It is said that the tallest peak is so high that it is possible to commune with the gods, hence the name God's Grasp.",
+        "points": [
+          [
+            519,
+            301
+          ],
+          [
+            318,
+            293
+          ],
+          [
+            263,
+            150
+          ],
+          [
+            348,
+            394
+          ],
+          [
+            298,
+            587
+          ],
+          [
+            366,
+            725
+          ],
+          [
+            464,
+            823
+          ]
+        ],
+        "x": 0,
+        "y": 0
+      },
+      {
+        "name": "The Nether (- - - border)",
+        "category": "Other Places of Note",
+        "description": "Located to the North East on the island is The Nether. Essentially a no go zone, it is the equivalent to the Bermuda Triangle. Magic doesn't behave properly there. Technology doesn't behave properly there. It drives immeasurable fear into the hearts of all the denizens of the island and, as a consequence, people do not go anywhere near it. There is no need for signs or fences, as it is clearly barren and blighted forming a natural border between the two ecological zones. Nestled somewhere within the Nether is To'Wrath, the first clank city. Its exact location is unknown and lost to time.",
+        "x": 0,
+        "y": 0
+      },
+      {
+        "name": "Lake Destined",
+        "category": "Other Places of Note",
+        "description": "Lake Destined (pronounced dest-eend) is the largest inland lake on the continent. Said to have an island somewhere in its waters. Though there is no official record or historical documentation of any islands in the lake or any magical features about the lake. But when people sail the lake they often go missing for days, then are eventually found somewhere on shore. Those who return (not all do, but most do) appear healthy but seem off to those that know them. Close friends and loved ones say the person's personality has changed, making them just generally complacent. They don't remember certain things that they should about their past, and when reminded they pretend they simply forgot (especially with what happened on the lake, no recollection there from anyone). Some loved ones have said they've found their returned just standing by a window, looking out and mumbling to themselves, sometimes for hours until they are disrupted by someone. Some have been severely injured/wounded well after the event and don't seem to register the pain as a normal person would (some claim their returned didn't even notice they were hurt until someone pointed it out). Anyone looking directly into the eyes of a returned say they almost get a feeling of nausea, and can't hold the void filled stare for long.",
+        "x": 0,
+        "y": 0
+      },
+      {
+        "name": "The Andel Line (··· border)",
+        "category": "Other Places of Note",
+        "description": "The Andel Line is located to the south east of the island and represents a temporary border between two of the wealthiest and most influential noble families (besides the King's) locked in conflict. Though mostly a cold conflict and fraught with standoffs, it has on occasion erupted in full on wars between the two families. While formidable forces on their own, they are no match for the Crown's forces, which regularly have to do a show of force to calm the temperatures while negotiations can be held until the next inevitable flare up. The Emberlanes, led by Rogan Emberlane, believe the Blackreeds have taken their ancestral grounds awarded to them by the first king of Sylvakar, Etrin the Guileful. The Blackreeds headed by Evlyn Blackreed maintain that the Blackreeds predate them by centuries and that it has been their lands all along. Some of the population in the surrounding area believe that this isn't really about ancestral grounds, but stemmed from a lovers quarrel, which caused the Emberlanes to break from the Blackreeds.",
+        "x": 0,
+        "y": 0
+      }
     ];
 
     function parseLocationsMd(text) {
@@ -361,12 +515,20 @@
         if (h3) {
           if (current && (current.name || current.description)) {
             current.description = (current.description || "").trim();
+            if (current.positions && current.positions.length === 1) {
+              current.x = current.positions[0][0];
+              current.y = current.positions[0][1];
+            } else if (current.positions && current.positions.length > 1) {
+              current.points = current.positions;
+              current.x = 0;
+              current.y = 0;
+            }
+            delete current.positions;
             if (current.name) result.push(current);
           }
-          current = { name: h3[1].trim(), category: category || "Other", x: 0, y: 0, description: "" };
+          current = { name: h3[1].trim(), category: category || "Other", x: 0, y: 0, description: "", positions: [] };
         } else if (pos && current) {
-          current.x = parseInt(pos[1], 10);
-          current.y = parseInt(pos[2], 10);
+          current.positions.push([parseInt(pos[1], 10), parseInt(pos[2], 10)]);
         } else if (current && line.trim() && !line.startsWith("#") && !line.startsWith("---")) {
           if (current.description) current.description += "\n";
           current.description += line.trim();
@@ -374,6 +536,15 @@
       }
       if (current && (current.name || current.description)) {
         current.description = (current.description || "").trim();
+        if (current.positions && current.positions.length === 1) {
+          current.x = current.positions[0][0];
+          current.y = current.positions[0][1];
+        } else if (current.positions && current.positions.length > 1) {
+          current.points = current.positions;
+          current.x = 0;
+          current.y = 0;
+        }
+        delete current.positions;
         if (current.name) result.push(current);
       }
       return result;
@@ -431,6 +602,7 @@
       detailBody.innerHTML = '<p class="placeholder">Click a location or pin to see details.</p>';
       document.querySelectorAll(".location-item").forEach(el => el.classList.remove("selected"));
       document.querySelectorAll("#markers .marker.highlight").forEach(el => el.classList.remove("highlight"));
+      document.querySelectorAll("#mapPolylines .polyline.highlight").forEach(el => el.classList.remove("highlight"));
     }
 
     function showDetail(name, description, isCustom, customPinIndex) {
@@ -453,11 +625,14 @@
       }
       document.querySelectorAll(".location-item").forEach(el => el.classList.remove("selected"));
       document.querySelectorAll("#markers .marker.highlight").forEach(el => el.classList.remove("highlight"));
+      document.querySelectorAll("#mapPolylines .polyline.highlight").forEach(el => el.classList.remove("highlight"));
       if (!isCustom) {
         const item = document.querySelector(`.location-item[data-name="${escapeAttr(name)}"]`);
         if (item) item.classList.add("selected");
         const marker = document.querySelector(`#markers .marker[data-name="${escapeAttr(name)}"]`);
         if (marker) marker.classList.add("highlight");
+        const polyline = document.querySelector(`#mapPolylines .polyline[data-name="${escapeAttr(name)}"]`);
+        if (polyline) polyline.classList.add("highlight");
       } else if (typeof customPinIndex === "number") {
         const m = document.querySelector(`#markers .marker.custom[data-pin-index="${customPinIndex}"]`);
         if (m) m.classList.add("highlight");
@@ -515,11 +690,24 @@
 
     function renderMarkers() {
       markersEl.innerHTML = "";
+      const polylinesEl = document.getElementById("mapPolylines");
+      if (polylinesEl) polylinesEl.innerHTML = "";
       const hasPos = (x, y) => (x !== 0 || y !== 0);
       const nw = mapImg.naturalWidth || 1;
       const nh = mapImg.naturalHeight || 1;
 
       LOCATIONS.forEach((loc) => {
+        if (loc.points && loc.points.length > 1) {
+          const pts = loc.points.map(([px, py]) => [(px / nw * 100), (py / nh * 100)].join(",")).join(" ");
+          const path = document.createElementNS("http://www.w3.org/2000/svg", "polyline");
+          path.setAttribute("points", pts);
+          path.setAttribute("class", "polyline");
+          path.setAttribute("data-name", loc.name);
+          path.setAttribute("title", loc.name);
+          path.addEventListener("click", e => { e.stopPropagation(); showDetail(loc.name, loc.description, false); });
+          polylinesEl.appendChild(path);
+          return;
+        }
         if (!hasPos(loc.x, loc.y)) return;
         const el = document.createElement("div");
         el.className = "marker";
@@ -567,7 +755,7 @@
     mapWrap.addEventListener("mousedown", e => {
       if (addPinMode) return;
       if (e.button !== 0) return;
-      if (e.target.closest(".marker")) return;
+      if (e.target.closest(".marker") || e.target.closest(".polyline")) return;
       isPanning = true;
       startX = e.clientX;
       startY = e.clientY;
