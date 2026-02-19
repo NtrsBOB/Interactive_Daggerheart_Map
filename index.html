@@ -87,17 +87,28 @@
       height: 44px;
       margin-left: -22px;
       margin-top: -22px;
-      background: #c44;
-      border: 2px solid #fff;
+      background: transparent;
+      border: 2px solid transparent;
       border-radius: 50%;
       cursor: pointer;
       z-index: 2;
-      box-shadow: 0 1px 4px rgba(0,0,0,0.5);
+      opacity: 0;
+      transition: opacity 0.2s, background 0.2s, border-color 0.2s;
     }
-    .marker:hover { background: #e66; }
+    .marker:hover,
+    .marker.highlight {
+      opacity: 1;
+      background: rgba(200, 68, 68, 0.25);
+      border-color: rgba(255, 255, 255, 0.5);
+    }
     .marker.custom {
-      background: #4a6;
-      border-color: #fff;
+      background: transparent;
+      border-color: transparent;
+    }
+    .marker.custom:hover,
+    .marker.custom.highlight {
+      background: rgba(68, 170, 102, 0.25);
+      border-color: rgba(255, 255, 255, 0.5);
     }
     .marker.hidden { display: none; }
     .panel {
@@ -310,22 +321,29 @@
       detailPanel.classList.remove("open");
       detailBody.innerHTML = '<p class="placeholder">Click a location or pin to see details.</p>';
       document.querySelectorAll(".location-item").forEach(el => el.classList.remove("selected"));
+      document.querySelectorAll("#markers .marker.highlight").forEach(el => el.classList.remove("highlight"));
     }
 
-    function showDetail(name, description, isCustom) {
+    function showDetail(name, description, isCustom, customPinIndex) {
       if (currentSelection && currentSelection.name === name && currentSelection.isCustom === isCustom) {
         closeDetail();
         return;
       }
-      currentSelection = { name, description, isCustom };
+      currentSelection = { name, description, isCustom, customIndex: customPinIndex };
       detailPanel.classList.add("open");
       let title = escapeHtml(name);
       if (isCustom) title += " (pin)";
       detailBody.innerHTML = `<h3>${title}</h3><p>${escapeHtml(description || "")}</p>`;
       document.querySelectorAll(".location-item").forEach(el => el.classList.remove("selected"));
+      document.querySelectorAll("#markers .marker.highlight").forEach(el => el.classList.remove("highlight"));
       if (!isCustom) {
         const item = document.querySelector(`.location-item[data-name="${escapeAttr(name)}"]`);
         if (item) item.classList.add("selected");
+        const marker = document.querySelector(`#markers .marker[data-name="${escapeAttr(name)}"]`);
+        if (marker) marker.classList.add("highlight");
+      } else if (typeof customPinIndex === "number") {
+        const m = document.querySelector(`#markers .marker.custom[data-pin-index="${customPinIndex}"]`);
+        if (m) m.classList.add("highlight");
       }
     }
     function escapeHtml(s) {
@@ -373,6 +391,7 @@
         if (!hasPos(loc.x, loc.y)) return;
         const el = document.createElement("div");
         el.className = "marker";
+        el.dataset.name = loc.name;
         el.style.left = (loc.x / nw * 100) + "%";
         el.style.top = (loc.y / nh * 100) + "%";
         el.title = loc.name;
@@ -383,13 +402,14 @@
       customPins.forEach((pin, i) => {
         const el = document.createElement("div");
         el.className = "marker custom";
+        el.dataset.pinIndex = i;
         el.style.left = pin.x + "%";
         el.style.top = pin.y + "%";
         el.title = pin.label || "Custom pin";
         el.dataset.index = i;
         el.addEventListener("click", e => {
           e.stopPropagation();
-          showDetail(pin.label || "Custom pin", pin.description || "", true);
+          showDetail(pin.label || "Custom pin", pin.description || "", true, i);
         });
         markersEl.appendChild(el);
       });
@@ -400,7 +420,7 @@
       customPins.push({ x: xPct, y: yPct, label, description: "" });
       saveCustomPins();
       renderMarkers();
-      showDetail(label, "", true);
+      showDetail(label, "", true, customPins.length - 1);
     }
 
     mapImg.addEventListener("load", () => { renderMarkers(); });
