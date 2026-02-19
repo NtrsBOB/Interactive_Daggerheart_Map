@@ -1,13 +1,13 @@
 # Map Legend — Locations
 
-Positions are x,y as percentage of map (0–100). Set to 0,0 until you place them on the map.
+Positions are **pixel coordinates** from the map image (same as opening Map.png and reading x,y from an image editor or viewer). Use 0,0 until you place them. Example: if a city is at pixel (450, 320) in Map.png, use `Position: 450, 320`.
 
 ---
 
 ## Cities (⭘)
 
 ### Dynamo
-Position: 0, 0
+Position: 479, 446
 
 Currently the biggest clank manufacturing city. Produces both clanks and goods (ie weapons, armor, trinkets, bobbles, clothes, you name it.)
 

@@ -39,6 +39,7 @@
       flex: 1;
       display: flex;
       min-height: 0;
+      position: relative;
     }
     .map-wrap {
       flex: 1;
@@ -82,10 +83,10 @@
     #markers .marker { pointer-events: auto; }
     .marker {
       position: absolute;
-      width: 24px;
-      height: 24px;
-      margin-left: -12px;
-      margin-top: -12px;
+      width: 44px;
+      height: 44px;
+      margin-left: -22px;
+      margin-top: -22px;
       background: #c44;
       border: 2px solid #fff;
       border-radius: 50%;
@@ -188,7 +189,7 @@
     <button type="button" id="addPinBtn">Add pin</button>
     <span id="pinHint" style="font-size: 0.85rem; color: #888;"></span>
   </div>
-  <div class="main">
+  <div class="main" id="main">
     <div class="map-wrap" id="mapWrap">
       <div class="map-inner" id="mapInner">
         <div class="map-image-wrap">
@@ -212,8 +213,8 @@
   </div>
 
   <script>
-    const LOCATIONS = [
-      { name: "Dynamo", category: "Cities", x: 0, y: 0, description: "Currently the biggest clank manufacturing city. Produces both clanks and goods (ie weapons, armor, trinkets, bobbles, clothes, you name it.)" },
+    let LOCATIONS = [
+      { name: "Dynamo", category: "Cities", x: 479, y: 446, description: "Currently the biggest clank manufacturing city. Produces both clanks and goods (ie weapons, armor, trinkets, bobbles, clothes, you name it.)" },
       { name: "Vinod", category: "Cities", x: 0, y: 0, description: "Sanskrit for pleasure, happiness, diversion. Contains the largest legal brothel in the kingdom of Sylvakar, the Blooming Flower. Legal prostitution is the city's main form of economic growth, making it a very prosperous city. The owner of the largest brothel is essentially the lord over the city. Her name is Madame Resplenda. The city guard under the direct control of Madame Resplenda officially known as the Vinodi Guard are known more commonly by the locals as the \"Rose Buds\". There are other brothels besides the main one (none come close to comparing in size), but all others must be registered and pay additional \"taxes\" which go to the \"city\". The required registration has limits on size, services, etc, which ensures the Blooming Flower remains the largest and most profitable brothel. Lots of tourism due to the high demand service they provide. Located in a warmer region of the kingdom, allowing for prostitutes to comfortably display their wares year round." },
       { name: "To'Wrath", category: "Cities", x: 0, y: 0, description: "Stands for The Ones Who Remember All Their History. It is a lost city located somewhere in the Nether, though its exact location or its status are unknown. It is the first machine (clank city). At one point the clanks there had ascended past all known technology, and then they had vanished." },
       { name: "Serenity", category: "Cities", x: 0, y: 0, description: "Known Faun city, considered a safe haven for the race and others that have seen persecution and prejudice from humanoids. Nestled amongst a massive outcropping of a sablewood forest." },
@@ -230,6 +231,47 @@
       { name: "Lake Destined", category: "Other Places of Note", x: 0, y: 0, description: "Lake Destined (pronounced dest-eend) is the largest inland lake on the continent. Said to have an island somewhere in its waters. Though there is no official record or historical documentation of any islands in the lake or any magical features about the lake. But when people sail the lake they often go missing for days, then are eventually found somewhere on shore. Those who return (not all do, but most do) appear healthy but seem off to those that know them. Close friends and loved ones say the person's personality has changed, making them just generally complacent. They don't remember certain things that they should about their past, and when reminded they pretend they simply forgot (especially with what happened on the lake, no recollection there from anyone). Some loved ones have said they've found their returned just standing by a window, looking out and mumbling to themselves, sometimes for hours until they are disrupted by someone. Some have been severely injured/wounded well after the event and don't seem to register the pain as a normal person would (some claim their returned didn't even notice they were hurt until someone pointed it out). Anyone looking directly into the eyes of a returned say they almost get a feeling of nausea, and can't hold the void filled stare for long." },
       { name: "The Andel Line (··· border)", category: "Other Places of Note", x: 0, y: 0, description: "The Andel Line is located to the south east of the island and represents a temporary border between two of the wealthiest and most influential noble families (besides the King's) locked in conflict. Though mostly a cold conflict and fraught with standoffs, it has on occasion erupted in full on wars between the two families. While formidable forces on their own, they are no match for the Crown's forces, which regularly have to do a show of force to calm the temperatures while negotiations can be held until the next inevitable flare up. The Emberlanes, led by Rogan Emberlane, believe the Blackreeds have taken their ancestral grounds awarded to them by the first king of Sylvakar, Etrin the Guileful. The Blackreeds headed by Evlyn Blackreed maintain that the Blackreeds predate them by centuries and that it has been their lands all along. Some of the population in the surrounding area believe that this isn't really about ancestral grounds, but stemmed from a lovers quarrel, which caused the Emberlanes to break from the Blackreeds." }
     ];
+
+    function parseLocationsMd(text) {
+      const lines = text.trim().split(/\r?\n/);
+      const result = [];
+      let current = null;
+      let category = "";
+      for (let i = 0; i < lines.length; i++) {
+        const line = lines[i];
+        const h3 = line.match(/^### (.+)$/);
+        const h2 = line.match(/^## (.+)$/);
+        const pos = line.match(/^Position:\s*(\d+)\s*,\s*(\d+)/i);
+        if (h2) {
+          const cat = h2[1].replace(/\s*\([^)]*\)\s*$/, "").trim();
+          if (cat && !cat.toLowerCase().startsWith("map legend")) category = cat;
+        }
+        if (h3) {
+          if (current && (current.name || current.description)) {
+            current.description = (current.description || "").trim();
+            if (current.name) result.push(current);
+          }
+          current = { name: h3[1].trim(), category: category || "Other", x: 0, y: 0, description: "" };
+        } else if (pos && current) {
+          current.x = parseInt(pos[1], 10);
+          current.y = parseInt(pos[2], 10);
+        } else if (current && line.trim() && !line.startsWith("#") && !line.startsWith("---")) {
+          if (current.description) current.description += "\n";
+          current.description += line.trim();
+        }
+      }
+      if (current && (current.name || current.description)) {
+        current.description = (current.description || "").trim();
+        if (current.name) result.push(current);
+      }
+      return result;
+    }
+
+    function setLocations(data) {
+      LOCATIONS = data;
+      renderLocationList();
+      renderMarkers();
+    }
 
     const STORAGE_KEY = "daggerheart_custom_pins";
     let scale = 1, translateX = 0, translateY = 0;
@@ -324,13 +366,15 @@
     function renderMarkers() {
       markersEl.innerHTML = "";
       const hasPos = (x, y) => (x !== 0 || y !== 0);
+      const nw = mapImg.naturalWidth || 1;
+      const nh = mapImg.naturalHeight || 1;
 
       LOCATIONS.forEach((loc) => {
         if (!hasPos(loc.x, loc.y)) return;
         const el = document.createElement("div");
         el.className = "marker";
-        el.style.left = loc.x + "%";
-        el.style.top = loc.y + "%";
+        el.style.left = (loc.x / nw * 100) + "%";
+        el.style.top = (loc.y / nh * 100) + "%";
         el.title = loc.name;
         el.addEventListener("click", e => { e.stopPropagation(); showDetail(loc.name, loc.description, false); });
         markersEl.appendChild(el);
@@ -371,6 +415,7 @@
     mapWrap.addEventListener("mousedown", e => {
       if (addPinMode) return;
       if (e.button !== 0) return;
+      if (e.target.closest(".marker")) return;
       isPanning = true;
       startX = e.clientX;
       startY = e.clientY;
@@ -416,9 +461,14 @@
     document.getElementById("detailClose").addEventListener("click", closeDetail);
 
     loadCustomPins();
-    renderLocationList();
     applyTransform();
+    renderLocationList();
     renderMarkers();
+
+    fetch("locations.md")
+      .then(r => r.ok ? r.text() : Promise.reject())
+      .then(text => setLocations(parseLocationsMd(text)))
+      .catch(() => {});
   </script>
 </body>
 </html>
