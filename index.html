@@ -102,13 +102,14 @@
       border-color: rgba(255, 255, 255, 0.5);
     }
     .marker.custom {
-      background: transparent;
-      border-color: transparent;
+      opacity: 1;
+      background: rgba(68, 170, 102, 0.65);
+      border-color: rgba(255, 255, 255, 0.75);
     }
     .marker.custom:hover,
     .marker.custom.highlight {
-      background: rgba(68, 170, 102, 0.25);
-      border-color: rgba(255, 255, 255, 0.5);
+      background: rgba(68, 170, 102, 0.85);
+      border-color: #fff;
     }
     .marker.hidden { display: none; }
     .panel {
@@ -190,6 +191,17 @@
     .detail-panel .detail-body p.placeholder { color: #666; margin: 0; font-size: 0.9rem; }
     .detail-panel .detail-body h3 { margin: 0 0 0.5rem 0; font-size: 1rem; color: #d0c0e8; }
     .detail-panel .detail-body h3 + p { margin: 0; font-size: 0.9rem; line-height: 1.5; color: #b0b0b0; white-space: pre-line; }
+    .detail-panel .remove-pin-btn {
+      margin-top: 0.5rem;
+      padding: 0.35rem 0.75rem;
+      font-size: 0.85rem;
+      color: #c44;
+      background: transparent;
+      border: 1px solid #c44;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+    .detail-panel .remove-pin-btn:hover { background: rgba(200, 68, 68, 0.2); }
   </style>
 </head>
 <body>
@@ -284,6 +296,14 @@
       renderMarkers();
     }
 
+    function removeCustomPin(index) {
+      customPins.splice(index, 1);
+      saveCustomPins();
+      renderMarkers();
+      renderLocationList();
+      closeDetail();
+    }
+
     const STORAGE_KEY = "daggerheart_custom_pins";
     let scale = 1, translateX = 0, translateY = 0;
     let isPanning = false, startX, startY, startTx, startTy;
@@ -331,9 +351,17 @@
       }
       currentSelection = { name, description, isCustom, customIndex: customPinIndex };
       detailPanel.classList.add("open");
-      let title = escapeHtml(name);
-      if (isCustom) title += " (pin)";
-      detailBody.innerHTML = `<h3>${title}</h3><p>${escapeHtml(description || "")}</p>`;
+      const title = escapeHtml(name);
+      let bodyHtml = `<h3>${title}</h3>`;
+      if (description) bodyHtml += `<p>${escapeHtml(description)}</p>`;
+      if (isCustom && typeof customPinIndex === "number") {
+        bodyHtml += `<p><button type="button" class="remove-pin-btn" data-pin-index="${customPinIndex}">Remove pin</button></p>`;
+      }
+      detailBody.innerHTML = bodyHtml;
+      if (isCustom) {
+        const btn = detailBody.querySelector(".remove-pin-btn");
+        if (btn) btn.addEventListener("click", () => removeCustomPin(customPinIndex));
+      }
       document.querySelectorAll(".location-item").forEach(el => el.classList.remove("selected"));
       document.querySelectorAll("#markers .marker.highlight").forEach(el => el.classList.remove("highlight"));
       if (!isCustom) {
@@ -344,6 +372,8 @@
       } else if (typeof customPinIndex === "number") {
         const m = document.querySelector(`#markers .marker.custom[data-pin-index="${customPinIndex}"]`);
         if (m) m.classList.add("highlight");
+        const listItem = document.querySelector(`.location-item.custom-pin-item[data-custom-index="${customPinIndex}"]`);
+        if (listItem) listItem.classList.add("selected");
       }
     }
     function escapeHtml(s) {
@@ -363,6 +393,14 @@
       });
       const order = ["Cities", "Settlements", "Points Of Interest", "Other Places of Note"];
       let html = "";
+      if (customPins.length > 0) {
+        html += `<details open><summary>My pins</summary>`;
+        customPins.forEach((pin, i) => {
+          const label = pin.label || "Custom pin";
+          html += `<div class="location-item custom-pin-item" data-custom-index="${i}" data-name="${escapeAttr(label)}" data-desc="${escapeAttr(pin.description || "")}">${escapeHtml(label)}</div>`;
+        });
+        html += "</details>";
+      }
       order.forEach(cat => {
         if (!byCategory[cat]) return;
         html += `<details open><summary>${escapeHtml(cat)}</summary>`;
@@ -376,7 +414,12 @@
         el.addEventListener("click", () => {
           const name = el.getAttribute("data-name");
           const desc = el.getAttribute("data-desc");
-          showDetail(name, desc, false);
+          const customIdx = el.getAttribute("data-custom-index");
+          if (customIdx !== null && customIdx !== "") {
+            showDetail(name, desc, true, parseInt(customIdx, 10));
+          } else {
+            showDetail(name, desc, false);
+          }
         });
       });
     }
