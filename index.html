@@ -80,7 +80,7 @@
       display: flex;
       align-items: center;
       justify-content: center;
-      transform-origin: 0 0;
+      transform-origin: center center;
       will-change: transform;
     }
 
@@ -594,6 +594,20 @@
       mapInner.style.transform = `translate(${translateX}px, ${translateY}px) scale(${scale})`;
     }
 
+    function fitMapToWindow() {
+      const nw = mapImg.naturalWidth || 1;
+      const nh = mapImg.naturalHeight || 1;
+      if (nw <= 0 || nh <= 0) return;
+      const wrapW = mapWrap.clientWidth;
+      const wrapH = mapWrap.clientHeight;
+      if (wrapW <= 0 || wrapH <= 0) return;
+      const fitScale = Math.min(wrapW / nw, wrapH / nh);
+      scale = Math.max(0.3, Math.min(4, fitScale));
+      translateX = 0;
+      translateY = 0;
+      applyTransform();
+    }
+
     let currentSelection = null;
 
     function closeDetail() {
@@ -743,7 +757,10 @@
       showDetail(label, "", true, customPins.length - 1);
     }
 
-    mapImg.addEventListener("load", () => { renderMarkers(); });
+    mapImg.addEventListener("load", () => {
+      fitMapToWindow();
+      renderMarkers();
+    });
 
     mapWrap.addEventListener("wheel", e => {
       e.preventDefault();
@@ -789,7 +806,11 @@
 
     document.getElementById("zoomIn").addEventListener("click", () => { scale = Math.min(4, scale + 0.25); applyTransform(); });
     document.getElementById("zoomOut").addEventListener("click", () => { scale = Math.max(0.3, scale - 0.25); applyTransform(); });
-    document.getElementById("zoomReset").addEventListener("click", () => { scale = 1; translateX = 0; translateY = 0; applyTransform(); });
+    document.getElementById("zoomReset").addEventListener("click", fitMapToWindow);
+
+    window.addEventListener("resize", () => {
+      if (mapImg.naturalWidth && mapImg.naturalHeight) fitMapToWindow();
+    });
 
     addPinBtn.addEventListener("click", () => {
       addPinMode = !addPinMode;
@@ -801,9 +822,13 @@
     document.getElementById("detailClose").addEventListener("click", closeDetail);
 
     loadCustomPins();
-    applyTransform();
     renderLocationList();
     renderMarkers();
+    if (mapImg.complete && mapImg.naturalWidth) {
+      fitMapToWindow();
+    } else {
+      applyTransform();
+    }
 
     fetch("locations.md")
       .then(r => r.ok ? r.text() : Promise.reject())
