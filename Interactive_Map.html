@@ -801,7 +801,6 @@
 
     mapWrap.addEventListener("mouseover", (e) => {
       const pin = e.target.closest(".marker") || e.target.closest(".polyline");
-      if (measureMode && pin && pin.classList.contains("marker")) return;
       if (pin) {
         const name = pin.getAttribute("data-name") || "";
         const isSelectedPin = currentSelection && (
