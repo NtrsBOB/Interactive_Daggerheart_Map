@@ -139,10 +139,17 @@
       transition: opacity 0.2s, stroke 0.2s;
     }
 
-    .map-polylines .polyline:hover,
-    .map-polylines .polyline.highlight {
+    .map-polylines .polyline:hover {
       opacity: 1;
       stroke: rgba(255, 255, 255, 0.55);
+    }
+
+    .map-polylines .polyline.highlight {
+      opacity: 1;
+      stroke: rgba(255, 255, 255, 0.95);
+      stroke-width: 3.5;
+      filter: url(#line-glow), drop-shadow(0 0 8px rgba(255, 255, 255, 0.6));
+      transition: opacity 0.2s, stroke 0.2s, stroke-width 0.2s, filter 0.2s;
     }
 
     .marker {
@@ -157,15 +164,23 @@
       cursor: pointer;
       z-index: 2;
       opacity: 0;
-      transition: opacity 0.2s, background 0.2s, border-color 0.2s;
+      transition: opacity 0.2s, background 0.2s, border-color 0.2s, transform 0.2s, box-shadow 0.2s;
     }
 
-    .marker:hover,
-    .marker.highlight {
+    .marker:hover {
       opacity: 1;
       background: rgba(200, 68, 68, 0.25);
       border-color: rgba(255, 255, 255, 0.85);
       box-shadow: 0 0 6px 1px rgba(255, 255, 255, 0.5), 0 0 14px 3px rgba(255, 255, 255, 0.25);
+    }
+
+    .marker.highlight {
+      opacity: 1;
+      background: rgba(220, 90, 90, 0.45);
+      border: 3px solid #fff;
+      box-shadow: 0 0 12px 2px rgba(255, 255, 255, 0.8), 0 0 24px 6px rgba(255, 255, 255, 0.4);
+      transform: scale(1.15);
+      z-index: 3;
     }
 
     .marker.custom {
@@ -175,11 +190,18 @@
       box-shadow: 0 0 6px 1px rgba(255, 255, 255, 0.5), 0 0 14px 3px rgba(255, 255, 255, 0.25);
     }
 
-    .marker.custom:hover,
-    .marker.custom.highlight {
+    .marker.custom:hover {
       background: rgba(200, 68, 68, 0.85);
       border-color: #fff;
       box-shadow: 0 0 8px 2px rgba(255, 255, 255, 0.7), 0 0 18px 4px rgba(255, 255, 255, 0.35);
+    }
+
+    .marker.custom.highlight {
+      background: rgba(220, 90, 90, 0.9);
+      border: 3px solid #fff;
+      box-shadow: 0 0 12px 2px rgba(255, 255, 255, 0.8), 0 0 24px 6px rgba(255, 255, 255, 0.4);
+      transform: scale(1.15);
+      z-index: 3;
     }
 
     .marker.hidden {
@@ -238,8 +260,10 @@
     }
 
     .location-item.selected {
-      background: #2a2440;
-      border-left-color: #8b7aa8;
+      background: #352a4a;
+      border-left: 4px solid #b8a0d0;
+      font-weight: 600;
+      color: #e0d8f0;
     }
 
     .detail-panel {
@@ -779,8 +803,13 @@
       const pin = e.target.closest(".marker") || e.target.closest(".polyline");
       if (measureMode && pin && pin.classList.contains("marker")) return;
       if (pin) {
-        tooltipPin = pin;
         const name = pin.getAttribute("data-name") || "";
+        const isSelectedPin = currentSelection && (
+          (name && !currentSelection.isCustom && currentSelection.name === name) ||
+          (currentSelection.isCustom && pin.classList.contains("custom") && parseInt(pin.getAttribute("data-pin-index"), 10) === currentSelection.customIndex)
+        );
+        if (isSelectedPin) return;
+        tooltipPin = pin;
         if (name) {
           pinTooltip.textContent = name;
           pinTooltip.setAttribute("aria-hidden", "false");
