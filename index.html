@@ -364,7 +364,7 @@
     <button type="button" id="zoomIn">Zoom +</button>
     <button type="button" id="zoomOut">Zoom −</button>
     <button type="button" id="zoomReset">Reset</button>
-    <button type="button" id="addPinBtn">Add pin</button>
+    <button type="button" id="addPinBtn">Add Pins</button>
     <button type="button" id="helpBtn" class="help-btn" title="How to use the map" aria-label="How to use the map">?</button>
     <span id="pinHint" style="font-size: 0.85rem; color: #888;"></span>
   </div>
@@ -762,14 +762,6 @@
       });
       const order = ["Cities", "Settlements", "Points Of Interest", "Other Places of Note"];
       let html = "";
-      if (customPins.length > 0) {
-        html += `<details open><summary>My pins</summary>`;
-        customPins.forEach((pin, i) => {
-          const label = pin.label || "Custom pin";
-          html += `<div class="location-item custom-pin-item" data-custom-index="${i}" data-name="${escapeAttr(label)}" data-desc="${escapeAttr(pin.description || "")}">${escapeHtml(label)}</div>`;
-        });
-        html += "</details>";
-      }
       order.forEach(cat => {
         if (!byCategory[cat]) return;
         html += `<details open><summary>${escapeHtml(cat)}</summary>`;
@@ -778,6 +770,14 @@
         });
         html += "</details>";
       });
+      if (customPins.length > 0) {
+        html += `<details open><summary>My pins</summary>`;
+        customPins.forEach((pin, i) => {
+          const label = pin.label || "Custom pin";
+          html += `<div class="location-item custom-pin-item" data-custom-index="${i}" data-name="${escapeAttr(label)}" data-desc="${escapeAttr(pin.description || "")}">${escapeHtml(label)}</div>`;
+        });
+        html += "</details>";
+      }
       locationList.innerHTML = html;
       locationList.querySelectorAll(".location-item").forEach(el => {
         el.addEventListener("click", () => {
@@ -842,6 +842,7 @@
       const label = prompt("Label for this pin (optional):") || "Custom pin";
       customPins.push({ x: xPct, y: yPct, label, description: "" });
       saveCustomPins();
+      renderLocationList();
       renderMarkers();
       showDetail(label, "", true, customPins.length - 1);
     }
@@ -947,9 +948,9 @@
 
   <h2>Adding your own pins</h2>
   <ul>
-    <li>Click <strong>Add pin</strong> in the toolbar (the cursor becomes a crosshair).</li>
+    <li>Click <strong>Add Pins</strong> in the toolbar (the cursor becomes a crosshair).</li>
     <li>Click anywhere on the map to place a pin. You can give it a label; it is saved in your browser.</li>
-    <li>Click <strong>Add pin</strong> again to turn off pin-placement mode.</li>
+    <li>Click <strong>Add Pins</strong> again to turn off pin-placement mode.</li>
     <li>Your custom pins appear under &quot;My pins&quot; in the Locations list. You can remove them from the detail panel after selecting a pin.</li>
   </ul>
 </body>
