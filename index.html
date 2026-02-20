@@ -49,6 +49,13 @@
       border-color: #6b5b8a;
     }
 
+    .toolbar button.help-btn {
+      font-size: 1.1rem;
+      font-weight: bold;
+      padding: 0.35rem 0.6rem;
+      line-height: 1;
+    }
+
     .main {
       flex: 1;
       display: flex;
@@ -123,7 +130,7 @@
       pointer-events: auto;
       cursor: pointer;
       fill: none;
-      stroke: rgba(255, 255, 255, 0.6);
+      stroke: rgba(255, 255, 255, 0.4);
       stroke-width: 2;
       stroke-linecap: round;
       stroke-linejoin: round;
@@ -135,7 +142,7 @@
     .map-polylines .polyline:hover,
     .map-polylines .polyline.highlight {
       opacity: 1;
-      stroke: rgba(255, 255, 255, 0.9);
+      stroke: rgba(255, 255, 255, 0.55);
     }
 
     .marker {
@@ -358,6 +365,7 @@
     <button type="button" id="zoomOut">Zoom −</button>
     <button type="button" id="zoomReset">Reset</button>
     <button type="button" id="addPinBtn">Add pin</button>
+    <button type="button" id="helpBtn" class="help-btn" title="How to use the map" aria-label="How to use the map">?</button>
     <span id="pinHint" style="font-size: 0.85rem; color: #888;"></span>
   </div>
   <div class="main" id="main">
@@ -367,7 +375,7 @@
             <defs>
               <filter id="line-glow" x="-50%" y="-50%" width="200%" height="200%">
                 <feGaussianBlur in="SourceGraphic" stdDeviation="1.5" result="blur"/>
-                <feFlood flood-color="rgba(255,255,255,0.7)" result="color"/>
+                <feFlood flood-color="rgba(255,255,255,0.4)" result="color"/>
                 <feComposite in="color" in2="blur" operator="in" result="glow"/>
                 <feMerge>
                   <feMergeNode in="glow"/>
@@ -901,6 +909,59 @@
     });
 
     document.getElementById("detailClose").addEventListener("click", closeDetail);
+
+    function openHelpWindow() {
+      const helpHtml = `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>How to use the map</title>
+  <style>
+    body { font-family: system-ui, sans-serif; margin: 0; padding: 1.25rem; background: #1a1a1a; color: #e0e0e0; line-height: 1.5; }
+    h1 { margin: 0 0 1rem 0; font-size: 1.25rem; color: #b8a0d0; }
+    h2 { margin: 1.25rem 0 0.4rem 0; font-size: 0.95rem; color: #c0b0d8; }
+    p, ul { margin: 0 0 0.5rem 0; font-size: 0.9rem; color: #b0b0b0; }
+    ul { padding-left: 1.25rem; }
+    li { margin-bottom: 0.25rem; }
+  </style>
+</head>
+<body>
+  <h1>How to use the Sylvakar map</h1>
+  <p>This interactive map lets you explore locations and add your own pins.</p>
+
+  <h2>Moving and zooming</h2>
+  <ul>
+    <li><strong>Pan</strong> — Click and drag the map to move around.</li>
+    <li><strong>Zoom</strong> — Use the Zoom + and Zoom − buttons in the toolbar, or scroll with the mouse wheel over the map.</li>
+    <li><strong>Reset</strong> — Click Reset to fit the map to the window.</li>
+  </ul>
+
+  <h2>Location pins</h2>
+  <ul>
+    <li><strong>Circle pins</strong> mark single locations; <strong>line pins</strong> mark borders or regions.</li>
+    <li><strong>Hover</strong> over any pin to see the location name.</li>
+    <li><strong>Click</strong> a pin to open its details in the panel on the right.</li>
+    <li>You can also click a location name in the <strong>Locations</strong> list to jump to its details and highlight the pin on the map.</li>
+  </ul>
+
+  <h2>Adding your own pins</h2>
+  <ul>
+    <li>Click <strong>Add pin</strong> in the toolbar (the cursor becomes a crosshair).</li>
+    <li>Click anywhere on the map to place a pin. You can give it a label; it is saved in your browser.</li>
+    <li>Click <strong>Add pin</strong> again to turn off pin-placement mode.</li>
+    <li>Your custom pins appear under &quot;My pins&quot; in the Locations list. You can remove them from the detail panel after selecting a pin.</li>
+  </ul>
+</body>
+</html>`;
+      const w = window.open("", "_blank", "width=440,height=520,resizable=yes,scrollbars=yes");
+      if (w) {
+        w.document.write(helpHtml);
+        w.document.close();
+      }
+    }
+
+    document.getElementById("helpBtn").addEventListener("click", openHelpWindow);
 
     loadCustomPins();
     renderLocationList();
