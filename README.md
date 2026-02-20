@@ -22,6 +22,7 @@ Open **Interactive_Map.html** in a browser. The map and all embedded locations l
 | **build.js** | Node script that reads **locations.md** and injects the `LOCATIONS` array into an HTML file. By default it targets **index.html**; see “Build script” for using it with **Interactive_Map.html**. |
 | **Map.png** | Map image used by the app (`<img src="Map.png">`). Must sit next to **Interactive_Map.html** (or the HTML file you open). |
 | **INSTRUCTIONS.md** | Step-by-step guide: editing locations.md, testing, convert/build, and sharing. |
+| **CHARACTERS.md** | How to add character names as links to HeroForge model pages (open in new tab). |
 
 ---
 
@@ -53,6 +54,7 @@ After that, share **Interactive_Map.html** and **Map.png** (same folder). Player
 - **Locations** — Right-hand list is grouped by category. Click a location or a pin on the map to open its details in the detail panel (× to close). Circle pins = single point; line pins = polylines (borders, routes).
 - **Measure** — Toolbar “Measure” button: click two points on the map to see distance in miles (or feet for short distances). Scale is derived from Sanji–To'Acar ≈ 24 miles. A **Scale** legend in the bottom-left shows the current zoom scale.
 - **Add Pins** — Toolbar “Add Pins”: click on the map to place a custom marker (optional label). Stored in the browser only; listed under “My pins”. Remove via the detail panel after selecting a pin.
+- **Characters** — Expandable “Characters” section in the sidebar. Character names are links to HeroForge (or other) model pages; they open in a new tab. See **CHARACTERS.md** for adding entries.
 - **Help** — “?” in the toolbar opens a short how-to in a new window.
 
 ---

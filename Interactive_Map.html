@@ -459,6 +459,36 @@
       pointer-events: none;
       z-index: 10;
     }
+
+    /* Characters section — links to HeroForge etc. */
+    .characters-section {
+      border-bottom: 1px solid #2a2a2a;
+    }
+
+    .characters-section summary {
+      padding: 0.35rem 0.75rem;
+      cursor: pointer;
+      font-size: 0.85rem;
+      color: #aaa;
+    }
+
+    .characters-section details[open] summary {
+      color: #b8a0d0;
+    }
+
+    .character-item {
+      display: block;
+      padding: 0.4rem 0.75rem 0.4rem 1.25rem;
+      font-size: 0.9rem;
+      color: #b0b0d0;
+      text-decoration: none;
+      border-left: 3px solid transparent;
+    }
+
+    .character-item:hover {
+      background: #2a2a2a;
+      color: #d0c8e8;
+    }
   </style>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -502,7 +532,9 @@
           <div id="markers"></div>
           <div id="distanceLegend" class="distance-legend" aria-hidden="true">
             <div class="legend-title">Scale</div>
-            <div class="legend-bar-wrap"><div class="legend-bar" id="legendBar"></div></div>
+            <div class="legend-bar-wrap">
+              <div class="legend-bar" id="legendBar"></div>
+            </div>
             <div class="legend-labels"><span>0 mi</span><span id="legendMiles">24 mi</span></div>
           </div>
           <svg id="measureOverlay" class="measure-overlay" viewBox="0 0 100 100" preserveAspectRatio="none"></svg>
@@ -521,6 +553,10 @@
     <aside class="panel">
       <h2>Locations</h2>
       <div class="location-list" id="locationList"></div>
+      <details class="characters-section" id="charactersDetails">
+        <summary>Characters</summary>
+        <div id="characterList"></div>
+      </details>
     </aside>
   </div>
 
@@ -692,6 +728,11 @@
         "x": 0,
         "y": 0
       }
+    ];
+
+    // Character names link to HeroForge (or other) model pages. Opens in a new tab.
+    const CHARACTERS = [
+      { name: "Jeral dan Luther", url: "https://www.heroforge.com/load_config%3D532300558/" }
     ];
 
     // Parser logic kept in sync with convert.html and build.js (locations.md → LOCATIONS).
@@ -1082,6 +1123,23 @@
           }
         });
       });
+      renderCharacterList();
+    }
+
+    function renderCharacterList() {
+      const listEl = document.getElementById("characterList");
+      if (!listEl) return;
+      let html = "";
+      CHARACTERS.forEach((ch) => {
+        const url = (ch.url || "").trim();
+        if (url) {
+          html += `<a class="character-item" href="${escapeAttr(url)}" target="_blank" rel="noopener noreferrer">${escapeHtml(ch.name)}</a>`;
+        } else {
+          html += `<span class="character-item" style="color:#666;cursor:default">${escapeHtml(ch.name)}</span>`;
+        }
+      });
+      if (!CHARACTERS.length) html = "<span class=\"character-item\" style=\"color:#666\">Add characters in the code (name + HeroForge URL).</span>";
+      listEl.innerHTML = html;
     }
 
     function renderMarkers() {
@@ -1448,6 +1506,9 @@
     <li>Click <strong>Add Pins</strong> again to turn off pin-placement mode.</li>
     <li>Your custom pins appear under &quot;My pins&quot; in the Locations list. You can remove them from the detail panel after selecting a pin.</li>
   </ul>
+
+  <h2>Characters</h2>
+  <p>Expand <strong>Characters</strong> in the sidebar to see character names. Each name is a link to its HeroForge (or other) model page and opens in a new tab.</p>
 </body>
 </html>`;
       const w = window.open("", "_blank", "width=440,height=520,resizable=yes,scrollbars=yes");
