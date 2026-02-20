@@ -360,6 +360,7 @@
 
 <body>
   <div id="pinTooltip" class="pin-tooltip" aria-hidden="true"></div>
+  <div id="selectionTooltip" class="pin-tooltip" aria-hidden="true"></div>
   <div class="toolbar">
     <button type="button" id="zoomIn">Zoom +</button>
     <button type="button" id="zoomOut">Zoom −</button>
@@ -669,6 +670,7 @@
     const addPinBtn = document.getElementById("addPinBtn");
     const pinHint = document.getElementById("pinHint");
     const pinTooltip = document.getElementById("pinTooltip");
+    const selectionTooltip = document.getElementById("selectionTooltip");
     let tooltipPin = null;
     let tooltipFromSelection = false;
 
@@ -697,9 +699,7 @@
     mapWrap.addEventListener("mouseout", (e) => {
       if (tooltipPin && (e.target === tooltipPin || tooltipPin.contains(e.target)) && (!e.relatedTarget || (e.relatedTarget !== tooltipPin && !tooltipPin.contains(e.relatedTarget)))) {
         tooltipPin = null;
-        if (tooltipFromSelection) {
-          refreshSelectionTooltip();
-        } else {
+        if (!tooltipFromSelection) {
           pinTooltip.classList.remove("visible");
           pinTooltip.setAttribute("aria-hidden", "true");
         }
@@ -727,18 +727,18 @@
 
     let currentSelection = null;
 
-    function showTooltipAtElement(name, element, fromSelection) {
+    function showSelectionTooltipAt(name, element) {
       if (!name || !element) return;
-      if (fromSelection) tooltipFromSelection = true;
-      pinTooltip.textContent = name;
-      pinTooltip.setAttribute("aria-hidden", "false");
+      tooltipFromSelection = true;
+      selectionTooltip.textContent = name;
+      selectionTooltip.setAttribute("aria-hidden", "false");
       const rect = element.getBoundingClientRect ? element.getBoundingClientRect() : null;
       if (rect) {
-        pinTooltip.style.left = (rect.left + rect.width / 2) + "px";
-        pinTooltip.style.top = (rect.top - 4) + "px";
-        pinTooltip.style.transform = "translate(-50%, -100%)";
+        selectionTooltip.style.left = (rect.left + rect.width / 2) + "px";
+        selectionTooltip.style.top = (rect.top - 4) + "px";
+        selectionTooltip.style.transform = "translate(-50%, -100%)";
       }
-      pinTooltip.classList.add("visible");
+      selectionTooltip.classList.add("visible");
     }
     function refreshSelectionTooltip() {
       if (!currentSelection) return;
@@ -749,12 +749,12 @@
       } else if (typeof currentSelection.customIndex === "number") {
         mapEl = document.querySelector(`#markers .marker.custom[data-pin-index="${currentSelection.customIndex}"]`);
       }
-      if (mapEl) showTooltipAtElement(name, mapEl, false);
+      if (mapEl) showSelectionTooltipAt(name, mapEl);
     }
     function hideTooltip() {
       tooltipFromSelection = false;
-      pinTooltip.classList.remove("visible");
-      pinTooltip.setAttribute("aria-hidden", "true");
+      selectionTooltip.classList.remove("visible");
+      selectionTooltip.setAttribute("aria-hidden", "true");
     }
 
     function closeDetail() {
@@ -796,14 +796,14 @@
         const polyline = document.querySelector(`#mapPolylines .polyline[data-name="${escapeAttr(name)}"]`);
         if (polyline) polyline.classList.add("highlight");
         const mapEl = marker || polyline;
-        if (mapEl) showTooltipAtElement(name, mapEl, true);
+        if (mapEl) showSelectionTooltipAt(name, mapEl);
         else hideTooltip();
       } else if (typeof customPinIndex === "number") {
         const m = document.querySelector(`#markers .marker.custom[data-pin-index="${customPinIndex}"]`);
         if (m) m.classList.add("highlight");
         const listItem = document.querySelector(`.location-item.custom-pin-item[data-custom-index="${customPinIndex}"]`);
         if (listItem) listItem.classList.add("selected");
-        if (m) showTooltipAtElement(name, m, true);
+        if (m) showSelectionTooltipAt(name, m);
         else hideTooltip();
       } else {
         hideTooltip();
