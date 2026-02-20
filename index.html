@@ -721,6 +721,23 @@
 
     let currentSelection = null;
 
+    function showTooltipAtElement(name, element) {
+      if (!name || !element) return;
+      pinTooltip.textContent = name;
+      pinTooltip.setAttribute("aria-hidden", "false");
+      const rect = element.getBoundingClientRect ? element.getBoundingClientRect() : null;
+      if (rect) {
+        pinTooltip.style.left = (rect.left + rect.width / 2) + "px";
+        pinTooltip.style.top = (rect.top - 4) + "px";
+        pinTooltip.style.transform = "translate(-50%, -100%)";
+      }
+      pinTooltip.classList.add("visible");
+    }
+    function hideTooltip() {
+      pinTooltip.classList.remove("visible");
+      pinTooltip.setAttribute("aria-hidden", "true");
+    }
+
     function closeDetail() {
       currentSelection = null;
       detailPanel.classList.remove("open");
@@ -728,6 +745,7 @@
       document.querySelectorAll(".location-item").forEach(el => el.classList.remove("selected"));
       document.querySelectorAll("#markers .marker.highlight").forEach(el => el.classList.remove("highlight"));
       document.querySelectorAll("#mapPolylines .polyline.highlight").forEach(el => el.classList.remove("highlight"));
+      hideTooltip();
     }
 
     function showDetail(name, description, isCustom, customPinIndex) {
@@ -758,11 +776,18 @@
         if (marker) marker.classList.add("highlight");
         const polyline = document.querySelector(`#mapPolylines .polyline[data-name="${escapeAttr(name)}"]`);
         if (polyline) polyline.classList.add("highlight");
+        const mapEl = marker || polyline;
+        if (mapEl) showTooltipAtElement(name, mapEl);
+        else hideTooltip();
       } else if (typeof customPinIndex === "number") {
         const m = document.querySelector(`#markers .marker.custom[data-pin-index="${customPinIndex}"]`);
         if (m) m.classList.add("highlight");
         const listItem = document.querySelector(`.location-item.custom-pin-item[data-custom-index="${customPinIndex}"]`);
         if (listItem) listItem.classList.add("selected");
+        if (m) showTooltipAtElement(name, m);
+        else hideTooltip();
+      } else {
+        hideTooltip();
       }
     }
     function escapeHtml(s) {
