@@ -576,6 +576,7 @@
       }
     ];
 
+    // Parser logic kept in sync with convert.html and build.js (locations.md → LOCATIONS).
     function parseLocationsMd(text) {
       const lines = text.trim().split(/\r?\n/);
       const result = [];
@@ -780,9 +781,11 @@
         byCategory[loc.category].push(loc);
       });
       const order = ["Cities", "Settlements", "Points Of Interest", "Other Places of Note"];
+      const orderedCats = order.filter(cat => byCategory[cat]);
+      const otherCats = Object.keys(byCategory).filter(cat => !order.includes(cat));
+      const categoriesToRender = [...orderedCats, ...otherCats];
       let html = "";
-      order.forEach(cat => {
-        if (!byCategory[cat]) return;
+      categoriesToRender.forEach(cat => {
         html += `<details open><summary>${escapeHtml(cat)}</summary>`;
         byCategory[cat].forEach(loc => {
           html += `<div class="location-item" data-name="${escapeAttr(loc.name)}" data-desc="${escapeAttr(loc.description)}">${escapeHtml(loc.name)}</div>`;
