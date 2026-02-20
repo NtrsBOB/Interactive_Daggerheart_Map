@@ -747,6 +747,7 @@
     let addPinMode = false;
     let measureMode = false;
     let measureFirst = null;
+    let measureLabels = null;
     let customPins = [];
 
     function loadCustomPins() {
@@ -774,6 +775,7 @@
     let tooltipFromSelection = false;
 
     mapWrap.addEventListener("mouseover", (e) => {
+      if (measureMode) return;
       const pin = e.target.closest(".marker") || e.target.closest(".polyline");
       if (pin) {
         tooltipPin = pin;
@@ -807,7 +809,8 @@
 
     function applyTransform() {
       mapInner.style.transform = `translate(${translateX}px, ${translateY}px) scale(${scale})`;
-      if (tooltipFromSelection) refreshSelectionTooltip();
+      if (tooltipFromSelection && !measureLabels) refreshSelectionTooltip();
+      if (measureLabels) updateMeasureLabelsPosition();
     }
 
     function fitMapToWindow() {
@@ -854,6 +857,89 @@
       tooltipFromSelection = false;
       selectionTooltip.classList.remove("visible");
       selectionTooltip.setAttribute("aria-hidden", "true");
+    }
+
+    function updateMeasureLabelsPosition() {
+      if (!measureLabels) return;
+      const wrap = mapImg.closest(".map-image-wrap");
+      if (!wrap) return;
+      const rect = wrap.getBoundingClientRect();
+      const toViewport = (pctX, pctY) => ({
+        x: rect.left + (pctX / 100) * rect.width,
+        y: rect.top + (pctY / 100) * rect.height
+      });
+      const positionTooltipAtElement = (tooltipEl, name, element) => {
+        if (!name || !element) return;
+        const r = element.getBoundingClientRect ? element.getBoundingClientRect() : null;
+        if (r) {
+          tooltipEl.textContent = name;
+          tooltipEl.style.left = (r.left + r.width / 2) + "px";
+          tooltipEl.style.top = (r.top - 4) + "px";
+          tooltipEl.style.transform = "translate(-50%, -100%)";
+          tooltipEl.classList.add("visible");
+          tooltipEl.setAttribute("aria-hidden", "false");
+        }
+      };
+      const positionTooltipAtCoords = (tooltipEl, name, pctX, pctY) => {
+        if (!name) return;
+        const pos = toViewport(pctX, pctY);
+        tooltipEl.textContent = name;
+        tooltipEl.style.left = pos.x + "px";
+        tooltipEl.style.top = (pos.y - 4) + "px";
+        tooltipEl.style.transform = "translate(-50%, -100%)";
+        tooltipEl.classList.add("visible");
+        tooltipEl.setAttribute("aria-hidden", "false");
+      };
+      if (measureLabels.one && measureLabels.one.name) {
+        pinTooltip.classList.remove("visible");
+        if (measureLabels.one.element) {
+          showSelectionTooltipAt(measureLabels.one.name, measureLabels.one.element);
+        } else {
+          selectionTooltip.textContent = measureLabels.one.name;
+          selectionTooltip.style.left = toViewport(measureLabels.one.pctX, measureLabels.one.pctY).x + "px";
+          selectionTooltip.style.top = (toViewport(measureLabels.one.pctX, measureLabels.one.pctY).y - 4) + "px";
+          selectionTooltip.style.transform = "translate(-50%, -100%)";
+          selectionTooltip.classList.add("visible");
+          selectionTooltip.setAttribute("aria-hidden", "false");
+        }
+        tooltipFromSelection = true;
+      }
+      if (measureLabels.two) {
+        const [first, second] = measureLabels.two;
+        if (first && first.name) {
+          if (first.element) {
+            showSelectionTooltipAt(first.name, first.element);
+          } else {
+            positionTooltipAtCoords(selectionTooltip, first.name, first.pctX, first.pctY);
+          }
+          selectionTooltip.setAttribute("aria-hidden", "false");
+          tooltipFromSelection = true;
+        } else {
+          selectionTooltip.classList.remove("visible");
+        }
+        if (second && second.name) {
+          if (second.element) {
+            positionTooltipAtElement(pinTooltip, second.name, second.element);
+          } else {
+            positionTooltipAtCoords(pinTooltip, second.name, second.pctX, second.pctY);
+          }
+        } else {
+          pinTooltip.classList.remove("visible");
+        }
+      }
+    }
+
+    function clearMeasureLabels() {
+      measureLabels = null;
+      pinTooltip.classList.remove("visible");
+      pinTooltip.setAttribute("aria-hidden", "true");
+      if (!currentSelection) {
+        selectionTooltip.classList.remove("visible");
+        selectionTooltip.setAttribute("aria-hidden", "true");
+        tooltipFromSelection = false;
+      } else {
+        refreshSelectionTooltip();
+      }
     }
 
     function closeDetail() {
@@ -1114,7 +1200,8 @@
         px: x * nw,
         py: y * nh,
         pctX: x * 100,
-        pctY: y * 100
+        pctY: y * 100,
+        name: null
       };
     }
 
@@ -1129,14 +1216,15 @@
           const pin = customPins[parseInt(pinIndex, 10)];
           const pctX = pin.x;
           const pctY = pin.y;
-          return { px: (pctX / 100) * nw, py: (pctY / 100) * nh, pctX, pctY };
+          const name = pin.label || "Custom pin";
+          return { px: (pctX / 100) * nw, py: (pctY / 100) * nh, pctX, pctY, name, element: marker };
         }
         const name = marker.getAttribute("data-name");
         const loc = LOCATIONS.find((l) => l.name === name);
         if (loc && (loc.x !== 0 || loc.y !== 0)) {
           const pctX = (loc.x / nw) * 100;
           const pctY = (loc.y / nh) * 100;
-          return { px: loc.x, py: loc.y, pctX, pctY };
+          return { px: loc.x, py: loc.y, pctX, pctY, name: name || null, element: marker };
         }
       }
       const polyline = el.closest(".polyline");
@@ -1152,7 +1240,8 @@
           const pctY = sumY / pts.length;
           const px = (pctX / 100) * nw;
           const py = (pctY / 100) * nh;
-          return { px, py, pctX, pctY };
+          const name = polyline.getAttribute("data-name");
+          return { px, py, pctX, pctY, name: name || null, element: polyline };
         }
       }
       return null;
@@ -1160,11 +1249,13 @@
 
     function clearMeasureOverlay() {
       measureFirst = null;
+      measureLabels = null;
       if (measureOverlayEl) measureOverlayEl.innerHTML = "";
       if (measureTooltipEl) {
         measureTooltipEl.style.display = "none";
         measureTooltipEl.textContent = "";
       }
+      clearMeasureLabels();
     }
 
     function pixelDistanceToMiles(pxDist) {
@@ -1212,6 +1303,8 @@
         circle.setAttribute("cy", coords.pctY);
         circle.setAttribute("r", 0.8);
         measureOverlayEl.appendChild(circle);
+        measureLabels = coords.name ? { one: { pctX: coords.pctX, pctY: coords.pctY, name: coords.name, element: coords.element || null } } : null;
+        if (measureLabels) updateMeasureLabelsPosition();
         return;
       }
       const line = document.createElementNS("http://www.w3.org/2000/svg", "line");
@@ -1226,6 +1319,13 @@
       circle2.setAttribute("cy", coords.pctY);
       circle2.setAttribute("r", 0.8);
       measureOverlayEl.appendChild(circle2);
+      measureLabels = {
+        two: [
+          { pctX: measureFirst.pctX, pctY: measureFirst.pctY, name: measureFirst.name || null, element: measureFirst.element || null },
+          { pctX: coords.pctX, pctY: coords.pctY, name: coords.name || null, element: coords.element || null }
+        ]
+      };
+      updateMeasureLabelsPosition();
       const pxDist = Math.hypot(coords.px - measureFirst.px, coords.py - measureFirst.py);
       const miles = pixelDistanceToMiles(pxDist);
       measureTooltipEl.textContent = miles >= 0.1 ? miles.toFixed(1) + " miles" : (miles * 5280).toFixed(0) + " ft";
