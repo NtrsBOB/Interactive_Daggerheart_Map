@@ -1,10 +1,31 @@
 # Instructions: Working with locations.md and subsequent steps
 
-This guide walks you through editing **locations.md**, testing your changes, updating the map app so it’s ready to share, and distributing it to players.
+**Bare minimum** (next section): get pin coordinates from Map.png, edit locations.md, then update the map app. **Full guide** (below): same workflow with details, testing, and sharing.
 
 ---
 
-## 1. Edit locations.md
+## Bare minimum: changing a location
+
+Use this when you only need to add or move a pin and update the map. Minimal steps, minimal prior knowledge.
+
+1. **Get pixel coordinates**
+   - Open **Map.png** in an image editor or viewer that shows pixel x,y (e.g. Windows Paint, GIMP, IrfanView, or hover in many image viewers).
+   - Note the x and y of the point where the pin should go.
+
+2. **Edit locations.md**
+   - Open **locations.md** in any text editor.
+   - Find the location (search for its name — it appears after `###`).
+   - Change the line `Position: x, y` to your numbers (e.g. `Position: 864, 542`). Save the file.
+
+3. **Update the map app** (so the map shows your change when opened)
+   - **Without Node.js:** Open **convert.html** in a browser → paste **all** of **locations.md** into the box → click **Convert** → copy the output. Open **Interactive_Map.html** in a text editor → search for `const LOCATIONS =` → replace the whole array (from `const LOCATIONS = [` through the matching `];`) with what you copied. Save.
+   - **With Node.js:** In the project folder run `node build.js`. (If the script says it can't find the file, edit **build.js** and set the path to **Interactive_Map.html** instead of index.html.)
+
+4. **If you share with players** — Send **Interactive_Map.html** and **Map.png** in the same folder.
+
+---
+
+## 1. Edit locations.md (full guide)
 
 **locations.md** is the only file you edit for location data. The map app (and the convert/build tools) read this format.
 
