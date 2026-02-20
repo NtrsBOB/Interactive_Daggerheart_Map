@@ -1326,6 +1326,7 @@
     mapWrap.addEventListener("click", (e) => {
       if (!measureMode || e.button !== 0) return;
       if (measureAwaitingClear) {
+        closeDetail();
         measureOverlayEl.innerHTML = "";
         measureTooltipEl.style.display = "none";
         measureTooltipEl.textContent = "";
