@@ -97,7 +97,10 @@ Position: 425, 732
 The Western Reaches is a massive mountain ridge spanning almost the entire western coast of Sylvakar. Elevation varies but towards the north of the ridge and spanning inland is The Halo. A series of peaks that ascend to the highest point on the island. It is said that the tallest peak is so high that it is possible to commune with the gods, hence the name God's Grasp.
 
 ### The Nether (- - - border)
-Position: 1045, 217
+Position: 867, 187
+Position: 933, 275
+Position: 1103, 324
+Position: 1184, 303
 
 Located to the North East on the island is The Nether. Essentially a no go zone, it is the equivalent to the Bermuda Triangle. Magic doesn't behave properly there. Technology doesn't behave properly there. It drives immeasurable fear into the hearts of all the denizens of the island and, as a consequence, people do not go anywhere near it. There is no need for signs or fences, as it is clearly barren and blighted forming a natural border between the two ecological zones. Nestled somewhere within the Nether is To'Wrath, the first clank city. Its exact location is unknown and lost to time.
 

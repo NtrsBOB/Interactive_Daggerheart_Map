@@ -346,7 +346,7 @@
       max-width: 280px;
       overflow: hidden;
       text-overflow: ellipsis;
-      text-shadow: 0 0 4px rgba(0,0,0,0.9), 0 1px 2px rgba(0,0,0,0.8);
+      text-shadow: 0 0 4px rgba(0, 0, 0, 0.9), 0 1px 2px rgba(0, 0, 0, 0.8);
     }
 
     .pin-tooltip.visible {
@@ -365,26 +365,27 @@
     <button type="button" id="zoomOut">Zoom −</button>
     <button type="button" id="zoomReset">Reset</button>
     <button type="button" id="addPinBtn">Add Pins</button>
-    <button type="button" id="helpBtn" class="help-btn" title="How to use the map" aria-label="How to use the map">?</button>
+    <button type="button" id="helpBtn" class="help-btn" title="How to use the map"
+      aria-label="How to use the map">?</button>
     <span id="pinHint" style="font-size: 0.85rem; color: #888;"></span>
   </div>
   <div class="main" id="main">
     <div class="map-wrap" id="mapWrap">
       <div class="map-inner" id="mapInner">
         <svg aria-hidden="true" style="position:absolute;width:0;height:0;">
-            <defs>
-              <filter id="line-glow" x="-50%" y="-50%" width="200%" height="200%">
-                <feGaussianBlur in="SourceGraphic" stdDeviation="1.5" result="blur"/>
-                <feFlood flood-color="rgba(255,255,255,0.4)" result="color"/>
-                <feComposite in="color" in2="blur" operator="in" result="glow"/>
-                <feMerge>
-                  <feMergeNode in="glow"/>
-                  <feMergeNode in="SourceGraphic"/>
-                </feMerge>
-              </filter>
-            </defs>
-          </svg>
-          <div class="map-image-wrap">
+          <defs>
+            <filter id="line-glow" x="-50%" y="-50%" width="200%" height="200%">
+              <feGaussianBlur in="SourceGraphic" stdDeviation="1.5" result="blur" />
+              <feFlood flood-color="rgba(255,255,255,0.4)" result="color" />
+              <feComposite in="color" in2="blur" operator="in" result="glow" />
+              <feMerge>
+                <feMergeNode in="glow" />
+                <feMergeNode in="SourceGraphic" />
+              </feMerge>
+            </filter>
+          </defs>
+        </svg>
+        <div class="map-image-wrap">
           <img src="Map.png" alt="Sylvakar map" id="mapImg">
           <svg id="mapPolylines" class="map-polylines" viewBox="0 0 100 100" preserveAspectRatio="none"></svg>
           <div id="markers"></div>
@@ -520,8 +521,26 @@
         "name": "The Nether (- - - border)",
         "category": "Other Places of Note",
         "description": "Located to the North East on the island is The Nether. Essentially a no go zone, it is the equivalent to the Bermuda Triangle. Magic doesn't behave properly there. Technology doesn't behave properly there. It drives immeasurable fear into the hearts of all the denizens of the island and, as a consequence, people do not go anywhere near it. There is no need for signs or fences, as it is clearly barren and blighted forming a natural border between the two ecological zones. Nestled somewhere within the Nether is To'Wrath, the first clank city. Its exact location is unknown and lost to time.",
-        "x": 1045,
-        "y": 217
+        "points": [
+          [
+            867,
+            187
+          ],
+          [
+            933,
+            275
+          ],
+          [
+            1103,
+            324
+          ],
+          [
+            1184,
+            303
+          ]
+        ],
+        "x": 0,
+        "y": 0
       },
       {
         "name": "Lake Destined",
