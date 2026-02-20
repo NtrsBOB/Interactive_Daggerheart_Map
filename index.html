@@ -670,6 +670,7 @@
     const pinHint = document.getElementById("pinHint");
     const pinTooltip = document.getElementById("pinTooltip");
     let tooltipPin = null;
+    let tooltipFromSelection = false;
 
     mapWrap.addEventListener("mouseover", (e) => {
       const pin = e.target.closest(".marker") || e.target.closest(".polyline");
@@ -695,14 +696,19 @@
     });
     mapWrap.addEventListener("mouseout", (e) => {
       if (tooltipPin && (e.target === tooltipPin || tooltipPin.contains(e.target)) && (!e.relatedTarget || (e.relatedTarget !== tooltipPin && !tooltipPin.contains(e.relatedTarget)))) {
-        pinTooltip.classList.remove("visible");
-        pinTooltip.setAttribute("aria-hidden", "true");
         tooltipPin = null;
+        if (tooltipFromSelection) {
+          refreshSelectionTooltip();
+        } else {
+          pinTooltip.classList.remove("visible");
+          pinTooltip.setAttribute("aria-hidden", "true");
+        }
       }
     });
 
     function applyTransform() {
       mapInner.style.transform = `translate(${translateX}px, ${translateY}px) scale(${scale})`;
+      if (tooltipFromSelection) refreshSelectionTooltip();
     }
 
     function fitMapToWindow() {
@@ -721,8 +727,9 @@
 
     let currentSelection = null;
 
-    function showTooltipAtElement(name, element) {
+    function showTooltipAtElement(name, element, fromSelection) {
       if (!name || !element) return;
+      if (fromSelection) tooltipFromSelection = true;
       pinTooltip.textContent = name;
       pinTooltip.setAttribute("aria-hidden", "false");
       const rect = element.getBoundingClientRect ? element.getBoundingClientRect() : null;
@@ -733,7 +740,19 @@
       }
       pinTooltip.classList.add("visible");
     }
+    function refreshSelectionTooltip() {
+      if (!currentSelection) return;
+      const name = currentSelection.name;
+      let mapEl = null;
+      if (!currentSelection.isCustom) {
+        mapEl = document.querySelector(`#markers .marker[data-name="${escapeAttr(name)}"]`) || document.querySelector(`#mapPolylines .polyline[data-name="${escapeAttr(name)}"]`);
+      } else if (typeof currentSelection.customIndex === "number") {
+        mapEl = document.querySelector(`#markers .marker.custom[data-pin-index="${currentSelection.customIndex}"]`);
+      }
+      if (mapEl) showTooltipAtElement(name, mapEl, false);
+    }
     function hideTooltip() {
+      tooltipFromSelection = false;
       pinTooltip.classList.remove("visible");
       pinTooltip.setAttribute("aria-hidden", "true");
     }
@@ -777,14 +796,14 @@
         const polyline = document.querySelector(`#mapPolylines .polyline[data-name="${escapeAttr(name)}"]`);
         if (polyline) polyline.classList.add("highlight");
         const mapEl = marker || polyline;
-        if (mapEl) showTooltipAtElement(name, mapEl);
+        if (mapEl) showTooltipAtElement(name, mapEl, true);
         else hideTooltip();
       } else if (typeof customPinIndex === "number") {
         const m = document.querySelector(`#markers .marker.custom[data-pin-index="${customPinIndex}"]`);
         if (m) m.classList.add("highlight");
         const listItem = document.querySelector(`.location-item.custom-pin-item[data-custom-index="${customPinIndex}"]`);
         if (listItem) listItem.classList.add("selected");
-        if (m) showTooltipAtElement(name, m);
+        if (m) showTooltipAtElement(name, m, true);
         else hideTooltip();
       } else {
         hideTooltip();
