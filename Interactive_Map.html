@@ -468,6 +468,8 @@
 <body>
   <div id="pinTooltip" class="pin-tooltip" aria-hidden="true"></div>
   <div id="selectionTooltip" class="pin-tooltip" aria-hidden="true"></div>
+  <div id="measurePoint1Label" class="pin-tooltip" aria-hidden="true"></div>
+  <div id="measurePoint2Label" class="pin-tooltip" aria-hidden="true"></div>
   <div class="toolbar">
     <button type="button" id="zoomIn">Zoom +</button>
     <button type="button" id="zoomOut">Zoom −</button>
@@ -898,7 +900,7 @@
         y: rect.top + (pctY / 100) * rect.height
       });
       const positionTooltipAtElement = (tooltipEl, name, element) => {
-        if (!name || !element) return;
+        if (!name || !element || !tooltipEl) return;
         const r = element.getBoundingClientRect ? element.getBoundingClientRect() : null;
         if (r) {
           tooltipEl.textContent = name;
@@ -910,7 +912,7 @@
         }
       };
       const positionTooltipAtCoords = (tooltipEl, name, pctX, pctY) => {
-        if (!name) return;
+        if (!name || !tooltipEl) return;
         const pos = toViewport(pctX, pctY);
         tooltipEl.textContent = name;
         tooltipEl.style.left = pos.x + "px";
@@ -920,49 +922,58 @@
         tooltipEl.setAttribute("aria-hidden", "false");
       };
       if (measureLabels.one && measureLabels.one.name) {
-        pinTooltip.classList.remove("visible");
         if (measureLabels.one.element) {
-          showSelectionTooltipAt(measureLabels.one.name, measureLabels.one.element);
+          positionTooltipAtElement(measurePoint1LabelEl, measureLabels.one.name, measureLabels.one.element);
         } else {
-          selectionTooltip.textContent = measureLabels.one.name;
-          selectionTooltip.style.left = toViewport(measureLabels.one.pctX, measureLabels.one.pctY).x + "px";
-          selectionTooltip.style.top = (toViewport(measureLabels.one.pctX, measureLabels.one.pctY).y - 4) + "px";
-          selectionTooltip.style.transform = "translate(-50%, -100%)";
-          selectionTooltip.classList.add("visible");
-          selectionTooltip.setAttribute("aria-hidden", "false");
+          positionTooltipAtCoords(measurePoint1LabelEl, measureLabels.one.name, measureLabels.one.pctX, measureLabels.one.pctY);
         }
-        tooltipFromSelection = true;
+        if (measurePoint2LabelEl) {
+          measurePoint2LabelEl.classList.remove("visible");
+          measurePoint2LabelEl.textContent = "";
+          measurePoint2LabelEl.setAttribute("aria-hidden", "true");
+        }
       }
       if (measureLabels.two) {
         const [first, second] = measureLabels.two;
         if (first && first.name) {
           if (first.element) {
-            showSelectionTooltipAt(first.name, first.element);
+            positionTooltipAtElement(measurePoint1LabelEl, first.name, first.element);
           } else {
-            positionTooltipAtCoords(selectionTooltip, first.name, first.pctX, first.pctY);
+            positionTooltipAtCoords(measurePoint1LabelEl, first.name, first.pctX, first.pctY);
           }
-          selectionTooltip.setAttribute("aria-hidden", "false");
-          tooltipFromSelection = true;
-        } else {
-          selectionTooltip.classList.remove("visible");
+        } else if (measurePoint1LabelEl) {
+          measurePoint1LabelEl.classList.remove("visible");
+          measurePoint1LabelEl.setAttribute("aria-hidden", "true");
         }
         if (second && second.name) {
           if (second.element) {
-            positionTooltipAtElement(pinTooltip, second.name, second.element);
+            positionTooltipAtElement(measurePoint2LabelEl, second.name, second.element);
           } else {
-            positionTooltipAtCoords(pinTooltip, second.name, second.pctX, second.pctY);
+            positionTooltipAtCoords(measurePoint2LabelEl, second.name, second.pctX, second.pctY);
           }
-        } else {
-          pinTooltip.classList.remove("visible");
+        } else if (measurePoint2LabelEl) {
+          measurePoint2LabelEl.classList.remove("visible");
+          measurePoint2LabelEl.textContent = "";
+          measurePoint2LabelEl.setAttribute("aria-hidden", "true");
         }
       }
     }
 
     function clearMeasureLabels() {
       measureLabels = null;
-      pinTooltip.classList.remove("visible");
-      pinTooltip.setAttribute("aria-hidden", "true");
+      if (measurePoint1LabelEl) {
+        measurePoint1LabelEl.classList.remove("visible");
+        measurePoint1LabelEl.textContent = "";
+        measurePoint1LabelEl.setAttribute("aria-hidden", "true");
+      }
+      if (measurePoint2LabelEl) {
+        measurePoint2LabelEl.classList.remove("visible");
+        measurePoint2LabelEl.textContent = "";
+        measurePoint2LabelEl.setAttribute("aria-hidden", "true");
+      }
       if (!currentSelection) {
+        pinTooltip.classList.remove("visible");
+        pinTooltip.setAttribute("aria-hidden", "true");
         selectionTooltip.classList.remove("visible");
         selectionTooltip.setAttribute("aria-hidden", "true");
         tooltipFromSelection = false;
@@ -1215,6 +1226,8 @@
 
     const measureOverlayEl = document.getElementById("measureOverlay");
     const measureTooltipEl = document.getElementById("measureTooltip");
+    const measurePoint1LabelEl = document.getElementById("measurePoint1Label");
+    const measurePoint2LabelEl = document.getElementById("measurePoint2Label");
 
     function getMapCoordsFromEvent(e) {
       const wrap = mapImg.closest(".map-image-wrap");
@@ -1298,6 +1311,7 @@
       mapWrap.classList.toggle("measure-mode", measureMode);
       clearMeasureOverlay();
       if (measureMode) {
+        closeDetail();
         pinHint.textContent = "Click two points on the map to measure distance.";
         if (addPinMode) {
           addPinMode = false;
