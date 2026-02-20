@@ -2,6 +2,17 @@
 
 An offline-first interactive map for the **Daggerheart** TTRPG setting (Sylvakar kingdom). No installs, no server, no dependencies — open the app in any browser and it works immediately.
 
+## Repository access
+
+This project lives in a private GitHub repo. To give someone access:
+
+1. Open the repo on GitHub → **Settings** → **Collaborators** (or **Manage access**).
+2. Click **Add people** and enter their GitHub username or email.
+3. Choose a role: **Read** (view/clone only), **Write** (push, manage issues), or **Admin** (full control).
+4. They accept the invite from their email or GitHub notifications.
+
+Direct link: `https://github.com/YOUR_USERNAME/Interactive_Daggerheart_Map/settings/access` (replace with your username and repo name).
+
 ## Quick start
 
 Open **index.html** in any browser. The map and locations work right away.
