@@ -1,64 +1,94 @@
 # Interactive Daggerheart Map
 
-An offline-first interactive map for the **Daggerheart** TTRPG setting (Sylvakar kingdom). No installs, no server, no dependencies — open the app in any browser and it works immediately.
+An **offline-first** interactive map for the **Daggerheart** TTRPG setting — the **Kingdom of Sylvakar**. One HTML file plus a map image; no install, no server, no dependencies. Open in any browser and it works. Players can pan, zoom, browse locations (cities, settlements, points of interest), measure distances (scale: Sanji–To'Acar ≈ 24 miles), and add their own pins (stored in the browser only).
 
-## Repository access
-
-This project lives in a private GitHub repo. To give someone access:
-
-1. Open the repo on GitHub → **Settings** → **Collaborators** (or **Manage access**).
-2. Click **Add people** and enter their GitHub username or email.
-3. Choose a role: **Read** (view/clone only), **Write** (push, manage issues), or **Admin** (full control).
-4. They accept the invite from their email or GitHub notifications.
-
-Direct link: `https://github.com/YOUR_USERNAME/Interactive_Daggerheart_Map/settings/access` (replace with your username and repo name).
+---
 
 ## Quick start
 
-Open **index.html** in any browser. The map and locations work right away.
+Open **Interactive_Map.html** in a browser. The map and all embedded locations load immediately. For **distance measurement** and **scale legend**, the app uses the Sanji–To'Acar baseline (24 miles) from the map.
 
-## Files
+---
+
+## Project files
 
 | File | Purpose |
-|------|---------|
-| **index.html** | Main map app. Open this in a browser. |
-| **convert.html** | Converts locations.md to the `LOCATIONS` array for pasting into index.html. |
-| **locations.md** | Editable list of locations: names, categories, positions (pixel coordinates), and descriptions. |
-| **Map.png** | Map image used by the app. |
+|------|--------|
+| **Interactive_Map.html** | Main map app. Contains the embedded `LOCATIONS` array, map UI (toolbar, detail panel, locations list), measure tool, scale legend, custom pins (localStorage), and help (?) button. |
+| **locations.md** | Single source of truth for location data: names, categories, pixel positions, and descriptions. See “Editing locations” below. |
+| **convert.html** | Converts **locations.md** to a `LOCATIONS` JSON array. Paste the result into **Interactive_Map.html** (search for `const LOCATIONS =`) when you want to ship a self-contained map without a server. |
+| **build.js** | Node script that reads **locations.md** and injects the `LOCATIONS` array into an HTML file. By default it targets **index.html**; see “Build script” for using it with **Interactive_Map.html**. |
+| **Map.png** | Map image used by the app (`<img src="Map.png">`). Must sit next to **Interactive_Map.html** (or the HTML file you open). |
+
+---
 
 ## Editing locations
 
-**You only edit locations.md.** Names, descriptions, and positions (pixel coordinates from the map image) live there.
+**You only edit locations.md.** The format is:
 
-- **When testing locally with a server:** If you run a local server (e.g. `npx serve`, or VS Code Live Server) and open the app from that, the app will fetch **locations.md** automatically. You don’t need to run the convert step for local testing.
-- **When sharing with players:** Use the convert step so the map works from a file or any host. Open **convert.html**, paste the contents of locations.md, click Convert, then copy the generated `LOCATIONS` array and replace the same array in **index.html** (search for `LOCATIONS =`). After that, the updated index.html (and Map.png) is what you send to players.
+- **Categories** — `## Category Name (optional emoji)` (e.g. `## Cities (⭘)`, `## Settlements (🛡)`, `## Points Of Interest (♡)`, `## Other Places of Note`). The app shows categories in a default order, then any others.
+- **Location** — `### Location Name` then optional `Position: x, y` (pixel coordinates from the map image). All following lines until the next `###` or `##` are the description.
+- **Single pin** — one `Position: x, y` per location.
+- **Polyline (border/route)** — multiple `Position:` lines; points are connected in order (e.g. The Andel Line, The Nether border, Western Reaches).
 
-Alternatively, run `node build.js` (see below) to inject locations into index.html without copy-paste.
+Pixel coordinates are from **Map.png** (e.g. open in an image editor and read x,y). Use `0,0` as a placeholder until you set real positions.
 
-## What you get
+**Workflow:**
 
-- **Map**: Zoom (mouse wheel or +/−), pan (drag). Uses **Map.png** in this folder.
-- **Locations**: Right panel lists all locations by category. Click one to see its description in the detail panel. Set `Position: x, y` (pixels from the map image) in locations.md to show pins on the map; use multiple `Position:` lines for polylines (borders, routes).
-- **Add pin**: Click “Add Pins”, then click on the map to place a custom marker (optional label). Stored in your browser only (localStorage).
+- **Local dev with a server** — Run something like `npx serve` or VS Code Live Server in the project folder and open **Interactive_Map.html** from that URL. The app will `fetch("locations.md")` and use it to override the embedded locations. No convert/build step needed for testing.
+- **Sharing with players (offline or any host)** — Either:
+  1. Open **convert.html**, paste the contents of **locations.md**, click Convert, then copy the generated `LOCATIONS` array and replace the array in **Interactive_Map.html** (search for `const LOCATIONS =`), or  
+  2. Run the build script so the HTML file is updated automatically (see “Build script” below).
+
+After that, share **Interactive_Map.html** and **Map.png** (same folder). Players open the HTML; custom pins they add are stored only in their browser (localStorage).
+
+---
+
+## What the map app does
+
+- **Map** — Pan (drag), zoom (toolbar +/− or mouse wheel), Reset to fit window. Uses **Map.png** in the same directory.
+- **Locations** — Right-hand list is grouped by category. Click a location or a pin on the map to open its details in the detail panel (× to close). Circle pins = single point; line pins = polylines (borders, routes).
+- **Measure** — Toolbar “Measure” button: click two points on the map to see distance in miles (or feet for short distances). Scale is derived from Sanji–To'Acar ≈ 24 miles. A **Scale** legend in the bottom-left shows the current zoom scale.
+- **Add Pins** — Toolbar “Add Pins”: click on the map to place a custom marker (optional label). Stored in the browser only; listed under “My pins”. Remove via the detail panel after selecting a pin.
+- **Help** — “?” in the toolbar opens a short how-to in a new window.
+
+---
 
 ## Sharing with players
 
-Send **index.html** and **Map.png** (and optionally locations.md for your own editing). Players double‑click index.html — no server, no extra steps. Custom pins they add are saved only on their device.
+Send **Interactive_Map.html** and **Map.png** in the same folder. Players open the HTML (double-click or from a file host). No server required. Optionally keep **locations.md** for your own editing and use convert/build when you want to refresh the embedded data.
+
+---
 
 ## Changing the map image
 
-To use a different map image, replace **Map.png** with your file (same name), or edit index.html and change the `src` of the map image (search for `Map.png`). Other map files in this folder (e.g. Map_colored.png) are not used by default; you can swap them in the same way.
+Replace **Map.png** with your file (same name), or edit the HTML and change the image `src` (search for `Map.png`). If you use another filename, ensure it sits next to the HTML file.
 
-## Adding new categories
-
-Locations are grouped by the `## Section` headers in locations.md. New sections you add there will appear in the sidebar automatically; you don’t need to change index.html. The order of categories in the list follows a default order, then any additional categories.
+---
 
 ## Build script (optional)
 
-To update the embedded locations in index.html without manual copy-paste:
+**build.js** reads **locations.md**, parses it (same format as **convert.html**), and injects the `LOCATIONS` array into an HTML file. Default target is **index.html**.
 
 ```bash
 node build.js
 ```
 
-This reads **locations.md**, parses it, and injects the `LOCATIONS` array into **index.html**. You still need to send index.html and Map.png to players.
+If your main app is **Interactive_Map.html** (and you have no **index.html**), either:
+
+1. Temporarily rename **Interactive_Map.html** to **index.html**, run `node build.js`, then rename back, or  
+2. Edit **build.js** and set `INDEX_HTML` to **Interactive_Map.html** (e.g. `const INDEX_HTML = path.join(ROOT, "Interactive_Map.html");`).
+
+After a successful run, share the updated HTML and **Map.png** with players.
+
+---
+
+## Repository access
+
+This repo is private. To give someone access:
+
+1. On GitHub: repo → **Settings** → **Collaborators** (or **Manage access**).
+2. **Add people** — enter their GitHub username or email, choose **Read**, **Write**, or **Admin**.
+3. They accept the invite (email or GitHub notifications).
+
+Link: `https://github.com/YOUR_USERNAME/Interactive_Daggerheart_Map/settings/access` (replace with your username and repo name).
