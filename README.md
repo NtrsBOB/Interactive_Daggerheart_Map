@@ -4,6 +4,8 @@ An **offline-first** interactive map for the **Daggerheart** TTRPG setting — t
 
 ---
 
+**Step-by-step guide** — See **INSTRUCTIONS.md** for editing **locations.md**, testing, updating the map app (convert or build), and sharing with players.
+
 ## Quick start
 
 Open **Interactive_Map.html** in a browser. The map and all embedded locations load immediately. For **distance measurement** and **scale legend**, the app uses the Sanji–To'Acar baseline (24 miles) from the map.
@@ -19,6 +21,7 @@ Open **Interactive_Map.html** in a browser. The map and all embedded locations l
 | **convert.html** | Converts **locations.md** to a `LOCATIONS` JSON array. Paste the result into **Interactive_Map.html** (search for `const LOCATIONS =`) when you want to ship a self-contained map without a server. |
 | **build.js** | Node script that reads **locations.md** and injects the `LOCATIONS` array into an HTML file. By default it targets **index.html**; see “Build script” for using it with **Interactive_Map.html**. |
 | **Map.png** | Map image used by the app (`<img src="Map.png">`). Must sit next to **Interactive_Map.html** (or the HTML file you open). |
+| **INSTRUCTIONS.md** | Step-by-step guide: editing locations.md, testing, convert/build, and sharing. |
 
 ---
 
