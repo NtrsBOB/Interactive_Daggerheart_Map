@@ -1,6 +1,6 @@
 # Instructions: Working with locations.md and subsequent steps
 
-**Bare minimum** (next section): get pin coordinates from Map.png, edit locations.md, then update the map app. **Full guide** (below): same workflow with details, testing, and sharing.
+**Bare minimum** (next section): get pin coordinates from Map.png, edit locations.md; then update the map app and sharing only if you need them (see callouts there). **Full guide** (below): same workflow with details.
 
 ---
 
@@ -17,11 +17,14 @@ Use this when you only need to add or move a pin and update the map. Minimal ste
    - Find the location (search for its name — it appears after `###`).
    - Change the line `Position: x, y` to your numbers (e.g. `Position: 864, 542`). Save the file.
 
-3. **Update the map app** (so the map shows your change when opened)
+3. **Update the map app** *(only if you need the map to work without a server)*  
+   **You can skip this step** if you always open the map via a local server (e.g. VS Code Live Server or `npx serve`): the app loads **locations.md** automatically, so editing **locations.md** is enough. A previous Cursor agent may have set up the project so you never needed this.  
+   **Do this step only when** you want to double‑click the HTML, host it somewhere without **locations.md**, or send a single folder to players:
    - **Without Node.js:** Open **convert.html** in a browser → paste **all** of **locations.md** into the box → click **Convert** → copy the output. Open **Interactive_Map.html** in a text editor → search for `const LOCATIONS =` → replace the whole array (from `const LOCATIONS = [` through the matching `];`) with what you copied. Save.
    - **With Node.js:** In the project folder run `node build.js`. (If the script says it can't find the file, edit **build.js** and set the path to **Interactive_Map.html** instead of index.html.)
 
-4. **If you share with players** — Send **Interactive_Map.html** and **Map.png** in the same folder.
+4. **If you share with players** *(only if you're the one distributing)*  
+   Send **Interactive_Map.html** and **Map.png** in the same folder. Skip this if you're only editing for yourself or someone else handles distribution.
 
 ---
 
@@ -89,7 +92,9 @@ No convert or build step is needed for this. When you’re satisfied, continue t
 
 ## 3. Update the map app with your locations
 
-The map app (**Interactive_Map.html**) has a **LOCATIONS** array embedded inside it. To ship a single HTML file (or use it without a server), you must put the contents of **locations.md** into that array. You can do that in one of two ways.
+**Skip this section** if you only ever open the map via a local server — the app loads **locations.md** automatically, so no convert/build is needed. (A Cursor agent may have set up the project so you never needed this.)
+
+The map app (**Interactive_Map.html**) has a **LOCATIONS** array embedded inside it. *Only when* you need to ship a single HTML file or use the map without a server, put the contents of **locations.md** into that array. You can do that in one of two ways.
 
 ### Option A: Using convert.html (no Node.js)
 
@@ -121,6 +126,8 @@ You only need **one** of Option A or Option B. After this step, **Interactive_Ma
 ---
 
 ## 4. Share with players
+
+**Only if you’re the one distributing.** Skip if you’re just editing for yourself or someone else handles distribution.
 
 1. Put **Interactive_Map.html** and **Map.png** in the **same folder** (the app loads the image from `Map.png` next to the HTML file).
 2. Share that folder (or the two files) with players — e.g. zip, cloud link, or web host.

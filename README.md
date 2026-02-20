@@ -4,7 +4,7 @@ An **offline-first** interactive map for the **Daggerheart** TTRPG setting — t
 
 ---
 
-**Step-by-step guide** — See **INSTRUCTIONS.md** for editing **locations.md**, testing, updating the map app (convert or build), and sharing with players.
+**Step-by-step guide** — See **INSTRUCTIONS.md**. **Note:** If you only edit **locations.md** and open the map via a local server (e.g. Live Server, `npx serve`), the app loads **locations.md** automatically — you may never need the convert/build step or the “sharing” steps. A Cursor agent may have set up the project so those steps weren’t required when building it.
 
 ## Quick start
 
@@ -38,8 +38,8 @@ Pixel coordinates are from **Map.png** (e.g. open in an image editor and read x,
 
 **Workflow:**
 
-- **Local dev with a server** — Run something like `npx serve` or VS Code Live Server in the project folder and open **Interactive_Map.html** from that URL. The app will `fetch("locations.md")` and use it to override the embedded locations. No convert/build step needed for testing.
-- **Sharing with players (offline or any host)** — Either:
+- **Local dev with a server** — Run something like `npx serve` or VS Code Live Server in the project folder and open **Interactive_Map.html** from that URL. The app will `fetch("locations.md")` and use it. **No convert/build step needed** — editing **locations.md** is enough. (You may have built the project this way without ever running convert or build.)
+- **Sharing with players (offline or any host)** — *Only if you need a single HTML file that works without a server:* Either:
   1. Open **convert.html**, paste the contents of **locations.md**, click Convert, then copy the generated `LOCATIONS` array and replace the array in **Interactive_Map.html** (search for `const LOCATIONS =`), or  
   2. Run the build script so the HTML file is updated automatically (see “Build script” below).
 
@@ -59,7 +59,7 @@ After that, share **Interactive_Map.html** and **Map.png** (same folder). Player
 
 ## Sharing with players
 
-Send **Interactive_Map.html** and **Map.png** in the same folder. Players open the HTML (double-click or from a file host). No server required. Optionally keep **locations.md** for your own editing and use convert/build when you want to refresh the embedded data.
+*Only needed if you’re the one distributing.* Send **Interactive_Map.html** and **Map.png** in the same folder. Players open the HTML (double-click or from a file host). No server required. Optionally keep **locations.md** for your own editing and use convert/build when you want to refresh the embedded data.
 
 ---
 
@@ -69,9 +69,9 @@ Replace **Map.png** with your file (same name), or edit the HTML and change the 
 
 ---
 
-## Build script (optional)
+## Build script (optional; only if you bake locations into the HTML)
 
-**build.js** reads **locations.md**, parses it (same format as **convert.html**), and injects the `LOCATIONS` array into an HTML file. Default target is **index.html**.
+**You may never need this** if you always run the map from a local server (the app loads **locations.md** then). Use **build.js** only when you want a single HTML file that works without a server (e.g. to send to players). **build.js** reads **locations.md**, parses it (same format as **convert.html**), and injects the `LOCATIONS` array into an HTML file. Default target is **index.html**.
 
 ```bash
 node build.js
