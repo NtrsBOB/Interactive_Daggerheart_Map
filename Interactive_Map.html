@@ -776,8 +776,8 @@
     let tooltipFromSelection = false;
 
     mapWrap.addEventListener("mouseover", (e) => {
-      if (measureMode) return;
       const pin = e.target.closest(".marker") || e.target.closest(".polyline");
+      if (measureMode && pin && pin.classList.contains("marker")) return;
       if (pin) {
         tooltipPin = pin;
         const name = pin.getAttribute("data-name") || "";
@@ -1296,10 +1296,13 @@
       let coords = null;
       const pinOrLine = e.target.closest(".marker") || e.target.closest(".polyline");
       if (pinOrLine) {
-        coords = getCoordsFromPinOrPolyline(pinOrLine);
-        if (coords) {
-          e.stopPropagation();
-          e.preventDefault();
+        const isLinePin = pinOrLine.classList.contains("polyline");
+        if (!isLinePin) {
+          coords = getCoordsFromPinOrPolyline(pinOrLine);
+          if (coords) {
+            e.stopPropagation();
+            e.preventDefault();
+          }
         }
       }
       if (!coords) coords = getMapCoordsFromEvent(e);
