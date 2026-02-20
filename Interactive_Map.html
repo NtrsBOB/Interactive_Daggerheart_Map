@@ -748,6 +748,7 @@
     let measureMode = false;
     let measureFirst = null;
     let measureLabels = null;
+    let measureAwaitingClear = false;
     let customPins = [];
 
     function loadCustomPins() {
@@ -1250,6 +1251,7 @@
     function clearMeasureOverlay() {
       measureFirst = null;
       measureLabels = null;
+      measureAwaitingClear = false;
       if (measureOverlayEl) measureOverlayEl.innerHTML = "";
       if (measureTooltipEl) {
         measureTooltipEl.style.display = "none";
@@ -1281,6 +1283,16 @@
 
     mapWrap.addEventListener("click", (e) => {
       if (!measureMode || e.button !== 0) return;
+      if (measureAwaitingClear) {
+        measureOverlayEl.innerHTML = "";
+        measureTooltipEl.style.display = "none";
+        measureTooltipEl.textContent = "";
+        measureLabels = null;
+        clearMeasureLabels();
+        measureAwaitingClear = false;
+        pinHint.textContent = "Click two points on the map to measure distance.";
+        return;
+      }
       let coords = null;
       const pinOrLine = e.target.closest(".marker") || e.target.closest(".polyline");
       if (pinOrLine) {
@@ -1334,6 +1346,8 @@
       measureTooltipEl.style.top = ((measureFirst.pctY + coords.pctY) / 2) + "%";
       measureTooltipEl.style.transform = "translate(-50%, -100%)";
       measureFirst = null;
+      measureAwaitingClear = true;
+      pinHint.textContent = "Click once to start another measurement.";
     }, true);
 
     document.getElementById("detailClose").addEventListener("click", closeDetail);
