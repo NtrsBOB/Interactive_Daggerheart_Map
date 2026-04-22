@@ -9,7 +9,7 @@ const path = require("path");
 
 const ROOT = path.resolve(__dirname);
 const LOCATIONS_MD = path.join(ROOT, "locations.md");
-const INDEX_HTML = path.join(ROOT, "index.html");
+const INDEX_HTML = path.join(ROOT, "docs", "Interactive_Map.html");
 
 // Parser logic kept in sync with index.html parseLocationsMd() and convert.html.
 function parseLocationsMd(text) {
@@ -94,21 +94,64 @@ function parseLocationsMd(text) {
   });
 }
 
+/** Index of the `]` that closes the LOCATIONS = [ ... ] literal (ignores `[]` inside strings). */
+function findEndOfLocationsArrayOpenBracket(html) {
+  const m = html.match(/(const|let) LOCATIONS = \[/);
+  if (!m) return null;
+  const open = m.index + m[0].length - 1;
+  let depth = 0;
+  let inString = false;
+  let escape = false;
+  for (let i = open; i < html.length; i++) {
+    const c = html[i];
+    if (inString) {
+      if (escape) {
+        escape = false;
+        continue;
+      }
+      if (c === "\\") {
+        escape = true;
+        continue;
+      }
+      if (c === '"') inString = false;
+      continue;
+    }
+    if (c === '"') {
+      inString = true;
+      continue;
+    }
+    if (c === "[") depth++;
+    else if (c === "]") {
+      depth--;
+      if (depth === 0) return { varKeyword: m[1], start: m.index, endBracket: i };
+    }
+  }
+  return null;
+}
+
 function main() {
   const md = fs.readFileSync(LOCATIONS_MD, "utf8");
   const locations = parseLocationsMd(md);
   const jsonString = JSON.stringify(locations, null, 2);
 
   let index = fs.readFileSync(INDEX_HTML, "utf8");
-  const regex = /(const|let) LOCATIONS = \[[\s\S]*?\];(\s+function parseLocationsMd)/;
-  const match = index.match(regex);
-  if (!match) {
-    console.error("Could not find LOCATIONS array in index.html");
+  const loc = findEndOfLocationsArrayOpenBracket(index);
+  if (!loc) {
+    console.error("Could not find LOCATIONS array in docs/Interactive_Map.html");
     process.exit(1);
   }
-  index = index.replace(regex, `$1 LOCATIONS = ${jsonString};$2`);
+  const semiAfter = index.indexOf(";", loc.endBracket);
+  if (semiAfter < 0) {
+    console.error("Could not find semicolon after LOCATIONS array");
+    process.exit(1);
+  }
+  const end = semiAfter + 1;
+  index =
+    index.slice(0, loc.start) +
+    `${loc.varKeyword} LOCATIONS = ${jsonString};` +
+    index.slice(end);
   fs.writeFileSync(INDEX_HTML, index, "utf8");
-  console.log(`Injected ${locations.length} locations into index.html`);
+  console.log(`Injected ${locations.length} locations into docs/Interactive_Map.html`);
 }
 
 main();
