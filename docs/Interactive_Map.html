@@ -1530,7 +1530,7 @@
       applyTransform();
     }
 
-    fetch("locations.md")
+    fetch("../locations.md")
       .then(r => r.ok ? r.text() : Promise.reject())
       .then(text => setLocations(parseLocationsMd(text)))
       .catch(() => { });
