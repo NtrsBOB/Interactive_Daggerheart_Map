@@ -13,7 +13,8 @@
     body {
       margin: 0;
       font-family: system-ui, -apple-system, sans-serif;
-      height: 100vh;
+      min-height: 100vh;
+      min-height: 100dvh;
       display: flex;
       flex-direction: column;
       background: #1a1a1a;
@@ -68,6 +69,10 @@
       position: relative;
       overflow: hidden;
       cursor: grab;
+      min-width: 0;
+      min-height: 0;
+      /* Let pointer handlers own pan; avoids iOS scrolling the page instead of the map */
+      touch-action: none;
     }
 
     .map-wrap.panning {
@@ -211,6 +216,7 @@
     .panel {
       width: 320px;
       min-width: 280px;
+      max-width: 100%;
       display: flex;
       flex-direction: column;
       background: #252525;
@@ -488,6 +494,55 @@
     .character-item:hover {
       background: #2a2a2a;
       color: #d0c8e8;
+    }
+
+    /* Phone / narrow: stack vertically so the map is not squeezed between two fixed sidebars */
+    @media (max-width: 52rem) {
+      .main {
+        flex-direction: column;
+        flex: 1;
+        min-height: 0;
+        overflow: auto;
+        -webkit-overflow-scrolling: touch;
+      }
+
+      .map-wrap {
+        flex: 1 1 auto;
+        min-height: 40vh;
+        min-height: 50svh;
+        width: 100%;
+        order: 0;
+        border-bottom: 1px solid #333;
+      }
+
+      .detail-panel {
+        order: 2;
+        width: 100%;
+        min-width: 0;
+        max-height: 40vh;
+        max-height: 40dvh;
+        border-left: none;
+        border-top: 1px solid #333;
+      }
+
+      .detail-panel.open .detail-header {
+        display: flex;
+      }
+
+      .panel {
+        order: 1;
+        width: 100%;
+        min-width: 0;
+        max-height: 45vh;
+        max-height: 45dvh;
+        border-left: none;
+        border-bottom: 1px solid #333;
+      }
+
+      .location-list {
+        max-height: 36vh;
+        max-height: 36dvh;
+      }
     }
   </style>
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -789,7 +844,8 @@
     }
 
     function setLocations(data) {
-      LOCATIONS = data;
+      LOCATIONS.length = 0;
+      for (const item of data) LOCATIONS.push(item);
       renderLocationList();
       renderMarkers();
     }
@@ -810,7 +866,7 @@
     const MILES_PER_PIXEL = SANJI_TO_TOAKAR_MILES / BASELINE_PIXELS;
 
     let scale = 1, translateX = 0, translateY = 0;
-    let isPanning = false, startX, startY, startTx, startTy;
+    let isPanning = false, startX, startY, startTx, startTy, panPointerId = null;
     let addPinMode = false;
     let measureMode = false;
     let measureFirst = null;
@@ -1222,30 +1278,41 @@
       applyTransform();
     }, { passive: false });
 
-    mapWrap.addEventListener("mousedown", e => {
+    function endPan() {
+      if (panPointerId != null) {
+        try { mapWrap.releasePointerCapture(panPointerId); } catch (_) { }
+        panPointerId = null;
+      }
+      isPanning = false;
+      mapWrap.classList.remove("panning");
+    }
+    mapWrap.addEventListener("pointerdown", e => {
       if (addPinMode || measureMode) return;
-      if (e.button !== 0) return;
+      if (e.button !== 0 && e.button !== -1) return;
       if (e.target.closest(".marker") || e.target.closest(".polyline")) return;
       isPanning = true;
+      panPointerId = e.pointerId;
       startX = e.clientX;
       startY = e.clientY;
       startTx = translateX;
       startTy = translateY;
       mapWrap.classList.add("panning");
+      try { mapWrap.setPointerCapture(e.pointerId); } catch (_) { }
     });
-    mapWrap.addEventListener("mousemove", e => {
+    mapWrap.addEventListener("pointermove", e => {
       if (!isPanning) return;
+      if (panPointerId != null && e.pointerId !== panPointerId) return;
       translateX = startTx + (e.clientX - startX);
       translateY = startTy + (e.clientY - startY);
       applyTransform();
     });
-    mapWrap.addEventListener("mouseup", () => {
-      isPanning = false;
-      mapWrap.classList.remove("panning");
+    mapWrap.addEventListener("pointerup", e => {
+      if (panPointerId != null && e.pointerId !== panPointerId) return;
+      endPan();
     });
-    mapWrap.addEventListener("mouseleave", () => {
-      isPanning = false;
-      mapWrap.classList.remove("panning");
+    mapWrap.addEventListener("pointercancel", (e) => {
+      if (panPointerId != null && e.pointerId !== panPointerId) return;
+      endPan();
     });
 
     mapWrap.addEventListener("click", e => {
